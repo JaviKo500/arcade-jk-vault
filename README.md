@@ -14,3 +14,7 @@ Siguiendo las buenas practicas recomendadas aquí:
 ```bash
 npx skills@latest add Klerith/fernando-skills
 ```
+
+## Contributions
+
+@JaviKo500
