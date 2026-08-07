@@ -14,16 +14,11 @@ Development follows Spec Driven Design via the `/spec` and `/spec-impl` commands
 npx skills@latest add Klerith/fernando-skills
 ```
 
-## Commands
-
-```bash
-npm run dev      # start dev server (also regenerates AGENTS.md — see below)
-npm run build    # production build
-npm run start    # run production build
-npm run lint     # eslint (flat config, eslint.config.mjs)
-```
-
 There is no test script configured yet.
+
+## Skills
+
+Use always /frontend-design for design user views.
 
 ## Critical: read the docs before writing code
 
