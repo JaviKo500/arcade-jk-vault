@@ -15,6 +15,15 @@ Siguiendo las buenas practicas recomendadas aquí:
 npx skills@latest add Klerith/fernando-skills
 ```
 
+## Commands
+
+```bash
+npm run dev      # start dev server (also regenerates AGENTS.md — see below)
+npm run build    # production build
+npm run start    # run production build
+npm run lint     # eslint (flat config, eslint.config.mjs)
+```
+
 ## Contributions
 
 @JaviKo500
