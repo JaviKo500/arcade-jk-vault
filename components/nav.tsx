@@ -5,8 +5,12 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "@/components/session-provider";
 
+function isHomeActive(pathname: string) {
+  return pathname === "/";
+}
+
 function isLibraryActive(pathname: string) {
-  return pathname === "/" || pathname.startsWith("/games");
+  return pathname === "/games" || pathname.startsWith("/games/");
 }
 
 function isRouteActive(pathname: string, href: string) {
@@ -30,7 +34,10 @@ export function Nav() {
           </div>
         </Link>
         <div className="links">
-          <Link href="/" className={isLibraryActive(pathname) ? "active" : ""}>
+          <Link href="/" className={isHomeActive(pathname) ? "active" : ""}>
+            Inicio
+          </Link>
+          <Link href="/games" className={isLibraryActive(pathname) ? "active" : ""}>
             Biblioteca
           </Link>
           <Link
@@ -38,6 +45,9 @@ export function Nav() {
             className={isRouteActive(pathname, "/leaderboard") ? "active" : ""}
           >
             Salón de la Fama
+          </Link>
+          <Link href="/about" className={isRouteActive(pathname, "/about") ? "active" : ""}>
+            Acerca de
           </Link>
         </div>
         <div className="spacer" />
@@ -77,6 +87,13 @@ export function Nav() {
         </div>
         <Link
           href="/"
+          className={isHomeActive(pathname) ? "active" : ""}
+          onClick={close}
+        >
+          Inicio
+        </Link>
+        <Link
+          href="/games"
           className={isLibraryActive(pathname) ? "active" : ""}
           onClick={close}
         >
@@ -88,6 +105,13 @@ export function Nav() {
           onClick={close}
         >
           Salón de la Fama
+        </Link>
+        <Link
+          href="/about"
+          className={isRouteActive(pathname, "/about") ? "active" : ""}
+          onClick={close}
+        >
+          Acerca de
         </Link>
         <Link
           href="/auth"
