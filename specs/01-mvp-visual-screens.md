@@ -1,6 +1,6 @@
 # SPEC 01 — MVP visual: pantallas de Arcade Vault
 
-> **Status:** Approved · **Depends on:** Ninguno (primer spec del proyecto) · **Date:** 2026-08-15
+> **Status:** Implemented · **Depends on:** Ninguno (primer spec del proyecto) · **Date:** 2026-08-15
 > **Objective:** Portar las 5 pantallas del prototipo estático en `references/templates/` (Biblioteca, Detalle, Reproductor, Auth, Salón de la Fama) a rutas reales de Next.js App Router, reutilizando el CSS/fuentes ya configurados y datos mock simulados, sin implementar lógica de juego real ni backend.
 
 ## Scope
@@ -107,25 +107,25 @@ Cada paso deja el proyecto compilable y navegable con `next dev`.
 
 ## Acceptance criteria
 
-- [ ] `next dev` levanta el proyecto sin errores en consola en ninguna de las 5 rutas.
-- [ ] La ruta `/` muestra el hero, el buscador filtra por título en tiempo real, los chips filtran por categoría, y se muestra el estado "sin resultados" cuando no hay coincidencias.
-- [ ] Cada tarjeta de juego en `/` navega a `/games/[id]` con el `id` correcto al hacer click.
-- [ ] La ruta `/games/[id]` muestra los datos del juego seleccionado (cover, tags, descripción, stats) y un leaderboard con 10 filas generadas por `generateMockScores`.
-- [ ] El botón "Jugar ahora" en `/games/[id]` navega a `/games/[id]/play`; el botón "Volver al vault" navega a `/`.
-- [ ] En `/games/[id]/play`, el puntaje y el nivel aumentan automáticamente mientras el juego no está en pausa ni terminado.
-- [ ] El botón "Pausa" detiene el incremento de puntaje y muestra el overlay "En pausa"; "Reanudar" lo retoma.
-- [ ] El botón "Fin" abre el modal de fin de juego mostrando el puntaje final.
-- [ ] Guardar el puntaje en el modal lo persiste en `localStorage` (`arcade-vault:saved-scores`) y muestra la confirmación "Puntuación guardada".
-- [ ] La ruta `/auth` permite alternar entre "Iniciar sesión" y "Crear cuenta", enviar el formulario inicia sesión simulada y navega a `/`.
-- [ ] "Jugar como invitado" en `/auth` navega a `/` sin iniciar sesión.
-- [ ] Tras iniciar sesión, el `Nav` muestra el nombre de usuario en vez del botón "Iniciar sesión", en todas las rutas.
-- [ ] Cerrar sesión desde el `Nav` limpia la sesión de `localStorage` y el `Nav` vuelve a mostrar "Iniciar sesión".
-- [ ] Recargar la página conserva la sesión iniciada (persistencia en `localStorage`).
-- [ ] La ruta `/leaderboard` muestra tabs por juego, un podio con los 3 primeros puestos y una tabla con el resto de las posiciones.
-- [ ] Con sesión iniciada, `/leaderboard` muestra la fila destacada "tu mejor marca"; sin sesión, no aparece.
-- [ ] El `Nav` resalta la ruta activa correctamente en `/`, `/games/[id]`, `/games/[id]/play`, `/auth` y `/leaderboard`.
-- [ ] El menú móvil del `Nav` (hamburguesa) abre y cierra el panel lateral en viewports angostos.
-- [ ] Todas las pantallas son usables en un viewport móvil (≤ 480px de ancho) sin overflow horizontal.
+- [x] `next dev` levanta el proyecto sin errores en consola en ninguna de las 5 rutas.
+- [x] La ruta `/` muestra el hero, el buscador filtra por título en tiempo real, los chips filtran por categoría, y se muestra el estado "sin resultados" cuando no hay coincidencias.
+- [x] Cada tarjeta de juego en `/` navega a `/games/[id]` con el `id` correcto al hacer click.
+- [x] La ruta `/games/[id]` muestra los datos del juego seleccionado (cover, tags, descripción, stats) y un leaderboard con 10 filas generadas por `generateMockScores`.
+- [x] El botón "Jugar ahora" en `/games/[id]` navega a `/games/[id]/play`; el botón "Volver al vault" navega a `/`.
+- [x] En `/games/[id]/play`, el puntaje y el nivel aumentan automáticamente mientras el juego no está en pausa ni terminado.
+- [x] El botón "Pausa" detiene el incremento de puntaje y muestra el overlay "En pausa"; "Reanudar" lo retoma.
+- [x] El botón "Fin" abre el modal de fin de juego mostrando el puntaje final.
+- [x] Guardar el puntaje en el modal lo persiste en `localStorage` (`arcade-vault:saved-scores`) y muestra la confirmación "Puntuación guardada".
+- [x] La ruta `/auth` permite alternar entre "Iniciar sesión" y "Crear cuenta", enviar el formulario inicia sesión simulada y navega a `/`.
+- [x] "Jugar como invitado" en `/auth` navega a `/` sin iniciar sesión.
+- [x] Tras iniciar sesión, el `Nav` muestra el nombre de usuario en vez del botón "Iniciar sesión", en todas las rutas.
+- [x] Cerrar sesión desde el `Nav` limpia la sesión de `localStorage` y el `Nav` vuelve a mostrar "Iniciar sesión".
+- [x] Recargar la página conserva la sesión iniciada (persistencia en `localStorage`).
+- [x] La ruta `/leaderboard` muestra tabs por juego, un podio con los 3 primeros puestos y una tabla con el resto de las posiciones.
+- [x] Con sesión iniciada, `/leaderboard` muestra la fila destacada "tu mejor marca"; sin sesión, no aparece.
+- [x] El `Nav` resalta la ruta activa correctamente en `/`, `/games/[id]`, `/games/[id]/play`, `/auth` y `/leaderboard`.
+- [x] El menú móvil del `Nav` (hamburguesa) abre y cierra el panel lateral en viewports angostos.
+- [x] Todas las pantallas son usables en un viewport móvil (≤ 480px de ancho) sin overflow horizontal.
 
 ## Decisions
 
