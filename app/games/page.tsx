@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { CATEGORY_FILTERS, GAMES } from "@/data/games";
 import { GameCard } from "@/components/game-card";
 
-export default function Home() {
+export default function GamesPage() {
   const [query, setQuery] = useState("");
   const [category, setCategory] =
     useState<(typeof CATEGORY_FILTERS)[number]>("TODOS");
