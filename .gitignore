@@ -37,7 +37,11 @@ yarn-error.log*
 .vercel
 
 # playwright mcp screenshots
-/.playwright-screenshots/
+/.playwright-screenshots/*
+!.playwright-screenshots/.gitkeep
+
+/.playwright-mcp/*
+!/.playwright-mcp/.gitkeep
 
 # typescript
 *.tsbuildinfo
