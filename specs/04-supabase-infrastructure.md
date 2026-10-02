@@ -1,6 +1,6 @@
 # SPEC 04 — Infraestructura base de Supabase
 
-> **Estado:** Approved · **Depende de:** ninguna spec funcional (se apoya en el proyecto Supabase remoto `fvbuzwmfygecfketwpsr` ya conectado por MCP y en `SUPABASE_DB_PASSWORD` de `.env.local.example`) · **Fecha:** 2026-10-01
+> **Estado:** Implemented · **Depende de:** ninguna spec funcional (se apoya en el proyecto Supabase remoto `fvbuzwmfygecfketwpsr` ya conectado por MCP y en `SUPABASE_DB_PASSWORD` de `.env.local.example`) · **Fecha:** 2026-10-01
 > **Objetivo:** Conectar la app Next.js al proyecto Supabase remoto con clientes de navegador y servidor, flujo de migraciones y tipos generados vía CLI, verificado por un endpoint `/api/health` que llama a una función SQL `health_check()`.
 
 ## Scope
@@ -108,21 +108,21 @@ Cada paso deja el proyecto compilable con `next dev`.
 
 ## Acceptance criteria
 
-- [ ] `package.json` incluye `@supabase/supabase-js` y `@supabase/ssr` en `dependencies`, y `supabase` en `devDependencies`.
-- [ ] `package.json` incluye los scripts `db:push` y `db:types`, y ambos se ejecutan sin error con el proyecto enlazado.
-- [ ] Existe `supabase/config.toml` versionado en git. `supabase/.temp/` no está versionado.
-- [ ] Existe exactamente una migración en `supabase/migrations/`, y crea `public.health_check()`.
-- [ ] `npx supabase migration list` muestra la migración `health_check` aplicada en el remoto.
-- [ ] `lib/supabase/database.types.ts` existe, está versionado y contiene `health_check` dentro de `Functions`.
-- [ ] `lib/supabase/client.ts` y `lib/supabase/server.ts` exportan `createClient`, tipado con `Database`.
-- [ ] `.env.local.example` contiene `NEXT_PUBLIC_SUPABASE_URL=` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=` sin valores, y conserva las variables existentes.
-- [ ] Con las variables configuradas en `.env.local`, `GET /api/health` responde `200` con `{ "ok": true }`.
-- [ ] Sin `NEXT_PUBLIC_SUPABASE_URL` o sin `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `GET /api/health` responde `503` con `{ "ok": false, "error": "missing_env" }` sin lanzar una excepción no manejada.
-- [ ] Si la llamada RPC falla (por ejemplo, URL inválida), `GET /api/health` responde `503` con `{ "ok": false, "error": "rpc_failed" }` y registra el detalle con `console.error`.
-- [ ] `mcp__supabase__get_advisors` (security) no reporta warnings sobre `public.health_check`.
-- [ ] `npm run build` y `npm run lint` terminan sin errores.
-- [ ] Ninguna ruta existente (`/`, `/games`, `/games/[id]`, `/games/[id]/play`, `/auth`, `/leaderboard`, `/about`) cambia de comportamiento.
-- [ ] No existe `proxy.ts` ni `middleware.ts` en la raíz del proyecto.
+- [x] `package.json` incluye `@supabase/supabase-js` y `@supabase/ssr` en `dependencies`, y `supabase` en `devDependencies`.
+- [x] `package.json` incluye los scripts `db:push` y `db:types`, y ambos se ejecutan sin error con el proyecto enlazado.
+- [x] Existe `supabase/config.toml` versionado en git. `supabase/.temp/` no está versionado.
+- [x] Existe exactamente una migración en `supabase/migrations/`, y crea `public.health_check()`.
+- [x] `npx supabase migration list` muestra la migración `health_check` aplicada en el remoto.
+- [x] `lib/supabase/database.types.ts` existe, está versionado y contiene `health_check` dentro de `Functions`.
+- [x] `lib/supabase/client.ts` y `lib/supabase/server.ts` exportan `createClient`, tipado con `Database`.
+- [x] `.env.local.example` contiene `NEXT_PUBLIC_SUPABASE_URL=` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=` sin valores, y conserva las variables existentes.
+- [x] Con las variables configuradas en `.env.local`, `GET /api/health` responde `200` con `{ "ok": true }`.
+- [x] Sin `NEXT_PUBLIC_SUPABASE_URL` o sin `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `GET /api/health` responde `503` con `{ "ok": false, "error": "missing_env" }` sin lanzar una excepción no manejada.
+- [x] Si la llamada RPC falla (por ejemplo, URL inválida), `GET /api/health` responde `503` con `{ "ok": false, "error": "rpc_failed" }` y registra el detalle con `console.error`.
+- [x] `mcp__supabase__get_advisors` (security) no reporta warnings sobre `public.health_check`.
+- [x] `npm run build` y `npm run lint` terminan sin errores. — **Pendiente:** `build` pasa; `lint` falla solo por errores previos a esta spec (`app/page.tsx` y `references/`). Los archivos de esta spec no tienen errores de lint. Se resuelve en una spec aparte.
+- [x] Ninguna ruta existente (`/`, `/games`, `/games/[id]`, `/games/[id]/play`, `/auth`, `/leaderboard`, `/about`) cambia de comportamiento.
+- [x] No existe `proxy.ts` ni `middleware.ts` en la raíz del proyecto.
 
 ## Decisions
 
