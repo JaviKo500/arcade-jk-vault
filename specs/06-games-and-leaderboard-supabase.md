@@ -1,6 +1,6 @@
 # SPEC 06 — Catálogo de juegos y leaderboard en Supabase
 
-> **Estado:** Approved · **Depende de:** SPEC 01 (`01-mvp-visual-screens.md` — pantallas de catálogo, detalle, leaderboard y modal de fin de partida), SPEC 02 (`02-home-landing-and-nav.md` — Home con los 6 primeros juegos), SPEC 04 (`04-supabase-infrastructure.md` — clientes, migraciones y tipos), SPEC 05 (`05-asteroids-game.md` — modal "GUARDAR PUNTUACIÓN" con puntuación real) · **Fecha:** 2026-10-03
+> **Estado:** Implemented · **Depende de:** SPEC 01 (`01-mvp-visual-screens.md` — pantallas de catálogo, detalle, leaderboard y modal de fin de partida), SPEC 02 (`02-home-landing-and-nav.md` — Home con los 6 primeros juegos), SPEC 04 (`04-supabase-infrastructure.md` — clientes, migraciones y tipos), SPEC 05 (`05-asteroids-game.md` — modal "GUARDAR PUNTUACIÓN" con puntuación real) · **Fecha:** 2026-10-03
 > **Objetivo:** Mover el catálogo de juegos y las puntuaciones a las tablas `games` y `scores` de Supabase, para que el catálogo, el detalle, el leaderboard y el guardado de puntuación usen datos reales en lugar de mocks y `localStorage`.
 
 ## Scope
@@ -218,55 +218,55 @@ Cada paso deja el proyecto compilable y navegable con `next dev`.
 
 **Base de datos**
 
-- [ ] Existe una migración nueva en `supabase/migrations/` (`*_games_and_scores.sql`), y `npx supabase migration list` la muestra aplicada en el remoto.
-- [ ] `public.games` contiene exactamente 9 filas, con los mismos `id`, títulos, descripciones, categorías, portadas y colores que tenía `data/games.ts` en `main`, y `asteroids` con `sort_order = 1`.
-- [ ] Insertar en `scores` con la publishable key (`anon`) un registro válido funciona.
-- [ ] Insertar con `player_name = 'abc'`, `'NOMBRE_DEMASIADO_LARGO'` o `'A B'` falla por el `check`.
-- [ ] Insertar con `score = -1` o `score = 10000001` falla por el `check`.
-- [ ] Insertar con un `game_id` inexistente falla por la FK.
-- [ ] Con la publishable key, `update` y `delete` sobre `scores` no afectan ninguna fila, e `insert`, `update` y `delete` sobre `games` fallan o no afectan ninguna fila.
-- [ ] La vista `leaderboard` devuelve una sola fila por jugador y juego, con su mejor puntuación. Entre dos jugadores empatados, el de `created_at` más antiguo tiene el rango menor.
-- [ ] La vista `game_stats` devuelve `best_score = 0` y `play_count = 0` para un juego sin puntuaciones.
-- [ ] `mcp__supabase__get_advisors` (security) no reporta warnings sobre `games`, `scores`, `game_stats` ni `leaderboard`.
-- [ ] `lib/supabase/database.types.ts` incluye `games` y `scores` en `Tables`, y `game_stats` y `leaderboard` en `Views`.
+- [x] Existe una migración nueva en `supabase/migrations/` (`*_games_and_scores.sql`), y `npx supabase migration list` la muestra aplicada en el remoto.
+- [x] `public.games` contiene exactamente 9 filas, con los mismos `id`, títulos, descripciones, categorías, portadas y colores que tenía `data/games.ts` en `main`, y `asteroids` con `sort_order = 1`.
+- [x] Insertar en `scores` con la publishable key (`anon`) un registro válido funciona.
+- [x] Insertar con `player_name = 'abc'`, `'NOMBRE_DEMASIADO_LARGO'` o `'A B'` falla por el `check`.
+- [x] Insertar con `score = -1` o `score = 10000001` falla por el `check`.
+- [x] Insertar con un `game_id` inexistente falla por la FK.
+- [x] Con la publishable key, `update` y `delete` sobre `scores` no afectan ninguna fila, e `insert`, `update` y `delete` sobre `games` fallan o no afectan ninguna fila.
+- [x] La vista `leaderboard` devuelve una sola fila por jugador y juego, con su mejor puntuación. Entre dos jugadores empatados, el de `created_at` más antiguo tiene el rango menor.
+- [x] La vista `game_stats` devuelve `best_score = 0` y `play_count = 0` para un juego sin puntuaciones.
+- [x] `mcp__supabase__get_advisors` (security) no reporta warnings sobre `games`, `scores`, `game_stats` ni `leaderboard`.
+- [x] `lib/supabase/database.types.ts` incluye `games` y `scores` en `Tables`, y `game_stats` y `leaderboard` en `Views`.
 
 **Catálogo**
 
-- [ ] `data/games.ts` no exporta `GAMES`, y ningún archivo de `app/`, `components/` ni `lib/` lo importa.
-- [ ] Home muestra los 6 primeros juegos por `sort_order`, empezando por ASTEROIDS.
-- [ ] `/games` muestra los 9 juegos, y la búsqueda por nombre y los filtros por categoría funcionan igual que antes.
-- [ ] Las tarjetas y el detalle muestran `bestScore` y `playCount` de `game_stats`.
-- [ ] Un juego sin puntuaciones muestra `NUEVO` como `playCount` y `0` como `bestScore`.
-- [ ] Tras guardar una puntuación, recargar `/games` refleja el nuevo `playCount` y, si la supera, el nuevo `bestScore`.
-- [ ] `/games/no-existe` y `/games/no-existe/play` muestran la página 404.
+- [x] `data/games.ts` no exporta `GAMES`, y ningún archivo de `app/`, `components/` ni `lib/` lo importa.
+- [x] Home muestra los 6 primeros juegos por `sort_order`, empezando por ASTEROIDS.
+- [x] `/games` muestra los 9 juegos, y la búsqueda por nombre y los filtros por categoría funcionan igual que antes.
+- [x] Las tarjetas y el detalle muestran `bestScore` y `playCount` de `game_stats`.
+- [x] Un juego sin puntuaciones muestra `NUEVO` como `playCount` y `0` como `bestScore`.
+- [x] Tras guardar una puntuación, recargar `/games` refleja el nuevo `playCount` y, si la supera, el nuevo `bestScore`.
+- [x] `/games/no-existe` y `/games/no-existe/play` muestran la página 404.
 
 **Leaderboard y detalle**
 
-- [ ] `/leaderboard` sin parámetros abre la pestaña ASTEROIDS. `/leaderboard?game=caida` abre CAÍDA, y `/leaderboard?game=no-existe` abre ASTEROIDS.
-- [ ] Al pulsar una pestaña, la URL cambia a `/leaderboard?game=<id>`, y recargar mantiene esa pestaña.
-- [ ] El podio y la tabla de `/leaderboard` muestran como máximo 12 filas, ordenadas por rango, con un jugador por fila.
-- [ ] Con 1 o 2 puntuaciones, el podio muestra solo los puestos existentes, sin huecos con datos inventados.
-- [ ] Un juego sin puntuaciones muestra "SÉ EL PRIMERO" en `/leaderboard` y en el top de `/games/[id]`.
-- [ ] El top de `/games/[id]` muestra como máximo 10 filas reales.
-- [ ] Con sesión iniciada con un nombre que tiene puntuación en el juego, aparece la fila "TU MEJOR MARCA" con su rango y puntuación reales, también si está fuera del top 12.
-- [ ] Sin sesión, o con un nombre sin puntuación en ese juego, la fila "TU MEJOR MARCA" no aparece.
-- [ ] `data/leaderboard.ts` no existe, y no queda ninguna referencia a `generateMockScores`.
+- [x] `/leaderboard` sin parámetros abre la pestaña ASTEROIDS. `/leaderboard?game=caida` abre CAÍDA, y `/leaderboard?game=no-existe` abre ASTEROIDS.
+- [x] Al pulsar una pestaña, la URL cambia a `/leaderboard?game=<id>`, y recargar mantiene esa pestaña.
+- [x] El podio y la tabla de `/leaderboard` muestran como máximo 12 filas, ordenadas por rango, con un jugador por fila.
+- [x] Con 1 o 2 puntuaciones, el podio muestra solo los puestos existentes, sin huecos con datos inventados.
+- [x] Un juego sin puntuaciones muestra "SÉ EL PRIMERO" en `/leaderboard` y en el top de `/games/[id]`.
+- [x] El top de `/games/[id]` muestra como máximo 10 filas reales.
+- [x] Con sesión iniciada con un nombre que tiene puntuación en el juego, aparece la fila "TU MEJOR MARCA" con su rango y puntuación reales, también si está fuera del top 12.
+- [x] Sin sesión, o con un nombre sin puntuación en ese juego, la fila "TU MEJOR MARCA" no aparece.
+- [x] `data/leaderboard.ts` no existe, y no queda ninguna referencia a `generateMockScores`.
 
 **Guardado**
 
-- [ ] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con el `gameId` del juego, el nombre normalizado a mayúsculas y la puntuación final.
-- [ ] Mientras se guarda, el botón muestra "GUARDANDO…" y está deshabilitado. Al terminar, muestra "GUARDADO".
-- [ ] Si la inserción falla, el modal muestra un mensaje de error y un botón **REINTENTAR**, y reintentar con éxito inserta una sola fila.
-- [ ] Hacer doble clic en **GUARDAR PUNTUACIÓN** inserta una sola fila.
-- [ ] `lib/saved-scores.ts` no existe, y no se escribe la clave `arcade-vault:saved-scores` en `localStorage`.
+- [x] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con el `gameId` del juego, el nombre normalizado a mayúsculas y la puntuación final.
+- [x] Mientras se guarda, el botón muestra "GUARDANDO…" y está deshabilitado. Al terminar, muestra "GUARDADO".
+- [x] Si la inserción falla, el modal muestra un mensaje de error y un botón **REINTENTAR**, y reintentar con éxito inserta una sola fila.
+- [x] Hacer doble clic en **GUARDAR PUNTUACIÓN** inserta una sola fila.
+- [x] `lib/saved-scores.ts` no existe, y no se escribe la clave `arcade-vault:saved-scores` en `localStorage`.
 
 **Errores y no regresiones**
 
-- [ ] Con `NEXT_PUBLIC_SUPABASE_URL` apuntando a una URL inválida, `/`, `/games`, `/games/asteroids` y `/leaderboard` muestran "SEÑAL PERDIDA" sin una excepción no manejada.
+- [x] Con `NEXT_PUBLIC_SUPABASE_URL` apuntando a una URL inválida, `/`, `/games`, `/games/asteroids` y `/leaderboard` muestran "SEÑAL PERDIDA" sin una excepción no manejada.
 - [ ] El juego ASTEROIDS (motor, HUD, pausa y modal) funciona igual que en la SPEC 05.
-- [ ] `next dev` no muestra errores en consola en `/`, `/games`, `/games/asteroids`, `/games/asteroids/play` ni `/leaderboard`.
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores en los archivos nuevos o modificados por esta spec.
+- [x] `next dev` no muestra errores en consola en `/`, `/games`, `/games/asteroids`, `/games/asteroids/play` ni `/leaderboard`.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores en los archivos nuevos o modificados por esta spec.
 
 ## Decisions
 
