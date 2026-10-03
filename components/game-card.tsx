@@ -3,6 +3,7 @@
 import { useRef, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/data/games";
+import { formatPlayCount } from "@/lib/format";
 
 const ACCENT_BUTTON_CLASS: Record<Game["accentColor"], string> = {
   cyan: "",
@@ -48,9 +49,15 @@ export function GameCard({ game }: { game: Game }) {
         <div className="title">{game.title}</div>
         <div className="desc">{game.shortDescription}</div>
         <div className="row">
-          <div className="score-badge">
-            <span>MEJOR PUNTUACIÓN</span>
-            <b>{game.bestScore.toLocaleString("es-ES")}</b>
+          <div className="score-stats">
+            <div className="score-badge">
+              <span>MEJOR PUNTUACIÓN</span>
+              <b>{game.bestScore.toLocaleString("es-ES")}</b>
+            </div>
+            <div className="score-badge plays">
+              <span>PARTIDAS</span>
+              <b>{formatPlayCount(game.playCount)}</b>
+            </div>
           </div>
           <button
             className={`btn ${ACCENT_BUTTON_CLASS[game.accentColor]}`}

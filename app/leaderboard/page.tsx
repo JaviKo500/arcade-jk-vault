@@ -1,22 +1,28 @@
-"use client";
-
-import { useMemo, useState } from "react";
 import Link from "next/link";
-import { GAMES } from "@/data/games";
-import { generateMockScores } from "@/data/leaderboard";
-import { useSession } from "@/components/session-provider";
+import { BeTheFirst } from "@/components/be-the-first";
+import { PlayerBestRow } from "@/components/player-best-row";
+import { SignalLost } from "@/components/signal-lost";
+import { getGames } from "@/lib/data/games";
+import { getLeaderboard } from "@/lib/data/leaderboard";
+import type { LeaderboardEntry } from "@/lib/data/types";
 
-export default function LeaderboardPage() {
-  const { session } = useSession();
-  const [tab, setTab] = useState(GAMES[0].id);
+const TOP_LIMIT = 12;
 
-  const rows = useMemo(
-    () => generateMockScores(tab.length * 23 + 7, 12),
-    [tab],
-  );
-  const game = GAMES.find((g) => g.id === tab)!;
-  const youRank = session ? Math.floor(8 + (tab.length % 4)) : null;
-  const youScore = session ? rows[5]?.score - 2400 : null;
+export default async function LeaderboardPage(
+  props: PageProps<"/leaderboard">,
+) {
+  const [games, { game: requested }] = await Promise.all([
+    getGames(),
+    props.searchParams,
+  ]);
+
+  if (!games.ok || games.data.length === 0) {
+    return <SignalLost />;
+  }
+
+  // Missing or unknown ?game= falls back to the first game by sort_order.
+  const game = games.data.find((g) => g.id === requested) ?? games.data[0];
+  const rows = await getLeaderboard(game.id, TOP_LIMIT);
 
   return (
     <div className="av-hall fade-in">
@@ -27,105 +33,108 @@ export default function LeaderboardPage() {
         </p>
       </div>
 
-      <div className="hall-tabs">
-        {GAMES.map((g) => (
-          <button
+      <nav className="hall-tabs" aria-label="Juegos">
+        {games.data.map((g) => (
+          <Link
             key={g.id}
-            className={`chip${tab === g.id ? " active" : ""}`}
-            onClick={() => setTab(g.id)}
+            href={`/leaderboard?game=${g.id}`}
+            className={`chip${g.id === game.id ? " active" : ""}`}
+            aria-current={g.id === game.id ? "page" : undefined}
           >
             {g.title}
-          </button>
+          </Link>
         ))}
-      </div>
+      </nav>
 
-      <div className="podium">
-        <div className="podium-slot silver">
-          <div className="rank-num">02</div>
-          <div className="name">{rows[1].playerName}</div>
-          <div className="score">{rows[1].score.toLocaleString("es-ES")}</div>
-          <div className="date">{rows[1].date}</div>
+      {!rows.ok ? (
+        <SignalLost variant="block" />
+      ) : rows.data.length === 0 ? (
+        <div className="hall-table">
+          <BeTheFirst gameId={game.id} />
         </div>
-        <div className="podium-slot gold">
-          <div
-            className="pixel"
-            style={{ fontSize: 9, color: "var(--gold)", letterSpacing: "0.18em" }}
-          >
-            CAMPEÓN
-          </div>
-          <div className="rank-num" style={{ fontSize: 36, marginTop: 4 }}>
-            01
-          </div>
-          <div className="name">{rows[0].playerName}</div>
-          <div className="score" style={{ fontSize: 20 }}>
-            {rows[0].score.toLocaleString("es-ES")}
-          </div>
-          <div className="date">{rows[0].date}</div>
-        </div>
-        <div className="podium-slot bronze">
-          <div className="rank-num">03</div>
-          <div className="name">{rows[2].playerName}</div>
-          <div className="score">{rows[2].score.toLocaleString("es-ES")}</div>
-          <div className="date">{rows[2].date}</div>
-        </div>
-      </div>
+      ) : (
+        <>
+          <Podium rows={rows.data} />
 
-      <div className="hall-table">
-        <div className="th">
-          <div>RANGO</div>
-          <div>JUGADOR</div>
-          <div>PUNTUACIÓN</div>
-          <div>FECHA</div>
-        </div>
-        {rows.map((r, i) => (
-          <div
-            key={r.rank}
-            className={`tr${
-              i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : ""
-            }`}
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-            <div className="pl">{r.playerName}</div>
-            <div className="sc">{r.score.toLocaleString("es-ES")}</div>
-            <div className="dt">{r.date}</div>
-          </div>
-        ))}
-        {session && (
-          <>
-            <div className="tr you-label">
-              ▸ TU MEJOR MARCA EN {game.title}
+          <div className="hall-table">
+            <div className="th">
+              <div>RANGO</div>
+              <div>JUGADOR</div>
+              <div>PUNTUACIÓN</div>
+              <div>FECHA</div>
             </div>
-            <div
-              className="tr you"
-              style={{ animationDelay: `${rows.length * 50 + 50}ms` }}
-            >
-              <div className="rk" style={{ color: "var(--yellow)" }}>
-                #{String(youRank).padStart(2, "0")}
-              </div>
-              <div className="pl" style={{ color: "var(--yellow)" }}>
-                {session.name}
-              </div>
+            {rows.data.map((r, i) => (
               <div
-                className="sc"
-                style={{
-                  color: "var(--yellow)",
-                  textShadow: "0 0 6px rgba(245,255,0,0.5)",
-                }}
+                key={r.playerName}
+                className={`tr${
+                  i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : ""
+                }`}
+                style={{ animationDelay: `${i * 50}ms` }}
               >
-                {(youScore || 9999).toLocaleString("es-ES")}
+                <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
+                <div className="pl">{r.playerName}</div>
+                <div className="sc">{r.score.toLocaleString("es-ES")}</div>
+                <div className="dt">{r.date}</div>
               </div>
-              <div className="dt">11/05/2026</div>
-            </div>
-          </>
-        )}
-      </div>
+            ))}
+            <PlayerBestRow
+              gameId={game.id}
+              gameTitle={game.title}
+              animationDelay={rows.data.length * 50 + 50}
+            />
+          </div>
+        </>
+      )}
 
       <div style={{ textAlign: "center", marginTop: 32 }}>
         <Link href="/games" className="btn lg">
           VOLVER A LA BIBLIOTECA
         </Link>
       </div>
+    </div>
+  );
+}
+
+// Only existing places are rendered; an empty spacer keeps gold centered.
+function Podium({ rows }: { rows: LeaderboardEntry[] }) {
+  const [first, second, third] = rows;
+
+  return (
+    <div className="podium">
+      {second ? (
+        <div className="podium-slot silver">
+          <div className="rank-num">02</div>
+          <div className="name">{second.playerName}</div>
+          <div className="score">{second.score.toLocaleString("es-ES")}</div>
+          <div className="date">{second.date}</div>
+        </div>
+      ) : (
+        <div className="podium-spacer" aria-hidden="true" />
+      )}
+      <div className="podium-slot gold">
+        <div
+          className="pixel"
+          style={{ fontSize: 9, color: "var(--gold)", letterSpacing: "0.18em" }}
+        >
+          CAMPEÓN
+        </div>
+        <div className="rank-num" style={{ fontSize: 36, marginTop: 4 }}>
+          01
+        </div>
+        <div className="name">{first.playerName}</div>
+        <div className="score" style={{ fontSize: 20 }}>
+          {first.score.toLocaleString("es-ES")}
+        </div>
+        <div className="date">{first.date}</div>
+      </div>
+      {third && (
+        <div className="podium-slot bronze">
+          <div className="rank-num">03</div>
+          <div className="name">{third.playerName}</div>
+          <div className="score">{third.score.toLocaleString("es-ES")}</div>
+          <div className="date">{third.date}</div>
+        </div>
+      )}
     </div>
   );
 }

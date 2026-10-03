@@ -1,19 +1,27 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GAMES } from "@/data/games";
-import { generateMockScores } from "@/data/leaderboard";
+import { BeTheFirst } from "@/components/be-the-first";
+import { SignalLost } from "@/components/signal-lost";
+import { getGame } from "@/lib/data/games";
+import { getLeaderboard } from "@/lib/data/leaderboard";
+import { formatPlayCount } from "@/lib/format";
 
-export default async function GameDetailPage(
-  props: PageProps<"/games/[id]">,
-) {
+const TOP_LIMIT = 10;
+
+export default async function GameDetailPage(props: PageProps<"/games/[id]">) {
   const { id } = await props.params;
-  const game = GAMES.find((g) => g.id === id);
+  const result = await getGame(id);
 
+  if (!result.ok) {
+    return <SignalLost />;
+  }
+
+  const game = result.data;
   if (!game) {
     notFound();
   }
 
-  const scores = generateMockScores(id.length * 17 + 3, 10);
+  const scores = await getLeaderboard(game.id, TOP_LIMIT);
 
   return (
     <div className="av-detail fade-in">
@@ -33,7 +41,7 @@ export default async function GameDetailPage(
           <div className="stat-strip">
             <div>
               <div className="l">Partidas</div>
-              <div className="v">{game.playCount}</div>
+              <div className="v">{formatPlayCount(game.playCount)}</div>
             </div>
             <div>
               <div className="l">Mejor global</div>
@@ -74,29 +82,35 @@ export default async function GameDetailPage(
       <aside>
         <div className="leaderboard">
           <h3>MEJORES PUNTUACIONES</h3>
-          {scores.map((entry, i) => (
-            <div
-              key={entry.rank}
-              className={`lb-row${
-                i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : ""
-              }`}
-            >
-              <div className="rk">#{String(entry.rank).padStart(2, "0")}</div>
-              <div className="pl">
-                {entry.playerName}
-                <div
-                  style={{
-                    fontSize: 10,
-                    color: "var(--ink-faint)",
-                    letterSpacing: "0.1em",
-                  }}
-                >
-                  {entry.date}
+          {!scores.ok ? (
+            <SignalLost variant="block" />
+          ) : scores.data.length === 0 ? (
+            <BeTheFirst gameId={game.id} />
+          ) : (
+            scores.data.map((entry, i) => (
+              <div
+                key={entry.rank}
+                className={`lb-row${
+                  i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : ""
+                }`}
+              >
+                <div className="rk">#{String(entry.rank).padStart(2, "0")}</div>
+                <div className="pl">
+                  {entry.playerName}
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: "var(--ink-faint)",
+                      letterSpacing: "0.1em",
+                    }}
+                  >
+                    {entry.date}
+                  </div>
                 </div>
+                <div className="sc">{entry.score.toLocaleString("es-ES")}</div>
               </div>
-              <div className="sc">{entry.score.toLocaleString("es-ES")}</div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </aside>
     </div>
