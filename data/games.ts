@@ -14,6 +14,18 @@ export type Game = {
 
 export const GAMES: Game[] = [
   {
+    id: "asteroids",
+    title: "ASTEROIDS",
+    shortDescription: "Pilota tu nave y pulveriza el campo de asteroides.",
+    longDescription:
+      "Una nave solitaria flota en un campo de asteroides donde el espacio no tiene bordes: lo que sale por un lado entra por el opuesto. Gira, propulsa y dispara para partir las rocas grandes en medianas y las medianas en pequeñas. Tienes 3 vidas con invencibilidad temporal al reaparecer, y cada nivel trae más asteroides. Atrapa el disparo triple y sube en la tabla.",
+    category: "SHOOTER",
+    cover: "cover-asteroids",
+    accentColor: "cyan",
+    bestScore: 0,
+    playCount: "NUEVO",
+  },
+  {
     id: "bloque-buster",
     title: "BLOQUE BUSTER",
     shortDescription: "Rebota la pelota y destruye muros de neón.",

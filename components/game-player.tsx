@@ -1,36 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/data/games";
+import { GameCanvas } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
+import { GAME_ENGINES } from "@/lib/games/registry";
+import type { GameCallbacks, GameInstance } from "@/lib/games/types";
 import { addSavedScore } from "@/lib/saved-scores";
 
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { session } = useSession();
 
+  // Si el juego tiene motor real, score, vidas y nivel vienen de él; si no,
+  // se usa la simulación de puntuación.
+  const engineFactory = GAME_ENGINES[game.id];
+  const hasEngine = engineFactory !== undefined;
+  const engineRef = useRef<GameInstance | null>(null);
+
   const [score, setScore] = useState(0);
-  const [lives] = useState(3);
+  const [lives, setLives] = useState(3);
+  const [engineLevel, setEngineLevel] = useState(1);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [nameOverride, setNameOverride] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const name = nameOverride ?? session?.name ?? "INVITADO";
-  const level = Math.floor(score / 2500) + 1;
+  const level = hasEngine ? engineLevel : Math.floor(score / 2500) + 1;
 
   useEffect(() => {
-    if (over || paused) return;
+    if (hasEngine || over || paused) return;
     const timer = setInterval(() => {
       setScore((s) => s + Math.floor(10 + Math.random() * 90));
     }, 220);
     return () => clearInterval(timer);
-  }, [over, paused]);
+  }, [hasEngine, over, paused]);
 
-  const endGame = () => setOver(true);
+  const engineCallbacks: GameCallbacks = {
+    onScore: setScore,
+    onLives: setLives,
+    onLevel: setEngineLevel,
+    // El motor es la fuente de verdad de la pausa (botón, P/Esc o pestaña oculta)
+    onPauseChange: setPaused,
+    onGameOver: (finalScore) => {
+      setScore(finalScore);
+      setOver(true);
+      engineRef.current?.setInputEnabled(false);
+    },
+  };
+
+  const togglePause = () => {
+    const engine = engineRef.current;
+    if (!engine) {
+      setPaused((p) => !p);
+      return;
+    }
+    if (paused) engine.resume();
+    else engine.pause();
+  };
+
+  // Con motor, end() dispara onGameOver, que abre el modal
+  const endGame = () => {
+    const engine = engineRef.current;
+    if (engine) engine.end();
+    else setOver(true);
+  };
 
   const restart = () => {
+    const engine = engineRef.current;
+    if (engine) {
+      engine.restart();
+      engine.setInputEnabled(true);
+    }
     setScore(0);
     setPaused(false);
     setOver(false);
@@ -66,7 +109,7 @@ export function GamePlayer({ game }: { game: Game }) {
           </div>
         </div>
         <div className="hud-actions">
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
           <button className="btn magenta" onClick={endGame}>
@@ -83,13 +126,23 @@ export function GamePlayer({ game }: { game: Game }) {
 
       <div className="crt">
         <div className="crt-screen">
-          <div className="game-arena">
-            <div className="grid-floor" />
-            <div className="enemy e1" />
-            <div className="enemy e2" />
-            <div className="enemy e3" />
-            <div className="player-ship" />
-          </div>
+          {engineFactory ? (
+            <GameCanvas
+              factory={engineFactory}
+              callbacks={engineCallbacks}
+              onInstance={(instance) => {
+                engineRef.current = instance;
+              }}
+            />
+          ) : (
+            <div className="game-arena">
+              <div className="grid-floor" />
+              <div className="enemy e1" />
+              <div className="enemy e2" />
+              <div className="enemy e3" />
+              <div className="player-ship" />
+            </div>
+          )}
           {paused && (
             <div
               className="crt-content"
