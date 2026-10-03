@@ -892,7 +892,7 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 24px;
   align-items: end;
 }
-@media (max-width: 720px) { .podium { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .podium { grid-template-columns: 1fr; } .podium-spacer { display: none; } }
 .podium-slot {
   position: relative;
   border: 1px solid var(--line);
