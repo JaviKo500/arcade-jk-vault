@@ -7,7 +7,10 @@ import { GameCanvas } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
 import { GAME_ENGINES } from "@/lib/games/registry";
 import type { GameCallbacks, GameInstance } from "@/lib/games/types";
-import { addSavedScore } from "@/lib/saved-scores";
+import { insertScore } from "@/lib/data/scores-client";
+import { normalizePlayerName } from "@/lib/format";
+
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
@@ -25,7 +28,11 @@ export function GamePlayer({ game }: { game: Game }) {
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [nameOverride, setNameOverride] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  // Synchronous guard: a double click fires twice before state re-renders.
+  const savingRef = useRef(false);
+  // Bumped on restart so a late insert result can't touch the next game's modal.
+  const roundRef = useRef(0);
 
   const name = nameOverride ?? session?.name ?? "INVITADO";
   const level = hasEngine ? engineLevel : Math.floor(score / 2500) + 1;
@@ -77,12 +84,26 @@ export function GamePlayer({ game }: { game: Game }) {
     setScore(0);
     setPaused(false);
     setOver(false);
-    setSaved(false);
+    setSaveStatus("idle");
+    savingRef.current = false;
+    roundRef.current += 1;
   };
 
-  const saveScore = () => {
-    addSavedScore({ gameId: game.id, playerName: name, score });
-    setSaved(true);
+  const saveScore = async () => {
+    if (savingRef.current || saveStatus === "saved") return;
+    savingRef.current = true;
+    const round = roundRef.current;
+    setSaveStatus("saving");
+
+    const result = await insertScore({
+      gameId: game.id,
+      playerName: normalizePlayerName(name),
+      score,
+    });
+
+    if (round !== roundRef.current) return;
+    savingRef.current = false;
+    setSaveStatus(result.ok ? "saved" : "error");
   };
 
   return (
@@ -180,23 +201,36 @@ export function GamePlayer({ game }: { game: Game }) {
             <h2>FIN DEL JUEGO</h2>
             <div className="final-label">PUNTUACIÓN FINAL</div>
             <div className="final">{score.toLocaleString("es-ES")}</div>
-            {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(event) =>
-                    setNameOverride(
-                      event.target.value.toUpperCase().slice(0, 10),
-                    )
-                  }
-                  placeholder="TUS INICIALES"
-                />
-                <button className="btn yellow" onClick={saveScore}>
-                  GUARDAR PUNTUACIÓN
-                </button>
-              </div>
-            ) : (
+            <div className="input-row">
+              <input
+                value={name}
+                disabled={saveStatus === "saving" || saveStatus === "saved"}
+                onChange={(event) =>
+                  setNameOverride(event.target.value.toUpperCase().slice(0, 10))
+                }
+                placeholder="TUS INICIALES"
+              />
+              <button
+                className="btn yellow"
+                disabled={saveStatus === "saving" || saveStatus === "saved"}
+                onClick={saveScore}
+              >
+                {saveStatus === "saving"
+                  ? "GUARDANDO…"
+                  : saveStatus === "saved"
+                    ? "GUARDADO"
+                    : saveStatus === "error"
+                      ? "REINTENTAR"
+                      : "GUARDAR PUNTUACIÓN"}
+              </button>
+            </div>
+            {saveStatus === "saved" && (
               <div className="toast-saved">▸ PUNTUACIÓN GUARDADA_</div>
+            )}
+            {saveStatus === "error" && (
+              <div className="save-error" role="alert">
+                ▸ NO SE PUDO GUARDAR. REVISA TU CONEXIÓN Y PULSA REINTENTAR.
+              </div>
             )}
             <div className="actions">
               <button className="btn" onClick={restart}>
