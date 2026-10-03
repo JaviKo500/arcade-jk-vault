@@ -1,6 +1,6 @@
 # SPEC 05 — Juego Asteroids jugable en la plataforma
 
-> **Estado:** Approved · **Depende de:** SPEC 01 (`01-mvp-visual-screens.md` — ruta `/games/[id]/play`, `GamePlayer`, modal de fin de partida), SPEC 02 (`02-home-landing-and-nav.md` — Home con `GAMES.slice(0, 6)`) · **Fecha:** 2026-10-03
+> **Estado:** Implemented · **Depende de:** SPEC 01 (`01-mvp-visual-screens.md` — ruta `/games/[id]/play`, `GamePlayer`, modal de fin de partida), SPEC 02 (`02-home-landing-and-nav.md` — Home con `GAMES.slice(0, 6)`) · **Fecha:** 2026-10-03
 > **Objetivo:** Portar el Asteroids de `references/02-asteroids/` a un motor TypeScript que se monta como un juego nuevo (`asteroids`) en `/games/asteroids/play` y envía puntuación, vidas, nivel y fin de partida al HUD y al modal de guardado de la plataforma.
 
 ## Scope
@@ -185,46 +185,46 @@ Cada paso deja el proyecto compilable y navegable con `next dev`.
 
 **Catálogo**
 
-- [ ] `GAMES[0]` en `data/games.ts` es la entrada `asteroids` con `title: "ASTEROIDS"`, `category: "SHOOTER"`, `cover: "cover-asteroids"`, `bestScore: 0` y `playCount: "NUEVO"`.
-- [ ] La entrada `rocas` no cambia respecto a `main`.
-- [ ] Home muestra ASTEROIDS como primera tarjeta, con la portada `cover-asteroids` visible y distinta de la de ROCAS.
-- [ ] `/leaderboard` abre por defecto la pestaña ASTEROIDS.
-- [ ] `/games/asteroids` muestra el detalle, y **JUGAR AHORA** lleva a `/games/asteroids/play`.
+- [x] `GAMES[0]` en `data/games.ts` es la entrada `asteroids` con `title: "ASTEROIDS"`, `category: "SHOOTER"`, `cover: "cover-asteroids"`, `bestScore: 0` y `playCount: "NUEVO"`.
+- [x] La entrada `rocas` no cambia respecto a `main`.
+- [x] Home muestra ASTEROIDS como primera tarjeta, con la portada `cover-asteroids` visible y distinta de la de ROCAS.
+- [x] `/leaderboard` abre por defecto la pestaña ASTEROIDS.
+- [x] `/games/asteroids` muestra el detalle, y **JUGAR AHORA** lleva a `/games/asteroids/play`.
 
 **Motor**
 
-- [ ] Al entrar en `/games/asteroids/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR". No aparecen asteroides en movimiento ni se pierden vidas hasta pulsar Espacio.
-- [ ] Las flechas izquierda y derecha rotan la nave, la flecha arriba la propulsa y Espacio dispara.
-- [ ] Mientras el canvas está montado, ni las flechas ni Espacio hacen scroll de la página.
-- [ ] Destruir un asteroide grande, mediano o pequeño suma exactamente 20, 50 o 100 puntos.
-- [ ] Un asteroide grande se divide en dos medianos, y un mediano en dos pequeños. Los pequeños desaparecen sin dividirse.
-- [ ] La nave, los asteroides, las balas y los power-ups que salen por un borde entran por el opuesto.
-- [ ] Al chocar con un asteroide se pierde una vida, y la nave reaparece en el centro a los 2 s parpadeando durante su invencibilidad.
-- [ ] Al destruir todos los asteroides de un nivel, el nivel sube en 1 y aparecen `3 + nivel` asteroides grandes.
-- [ ] Recoger el power-up activa el disparo triple durante 5 s, y el canvas muestra el indicador `3x N.Ns`.
-- [ ] El canvas no dibuja el texto de score, nivel y vidas ni ningún overlay "GAME OVER".
-- [ ] La nave se dibuja en cyan, los asteroides en blanco/magenta y las balas en amarillo.
+- [x] Al entrar en `/games/asteroids/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR". No aparecen asteroides en movimiento ni se pierden vidas hasta pulsar Espacio.
+- [x] Las flechas izquierda y derecha rotan la nave, la flecha arriba la propulsa y Espacio dispara.
+- [x] Mientras el canvas está montado, ni las flechas ni Espacio hacen scroll de la página.
+- [x] Destruir un asteroide grande, mediano o pequeño suma exactamente 20, 50 o 100 puntos.
+- [x] Un asteroide grande se divide en dos medianos, y un mediano en dos pequeños. Los pequeños desaparecen sin dividirse.
+- [x] La nave, los asteroides, las balas y los power-ups que salen por un borde entran por el opuesto.
+- [x] Al chocar con un asteroide se pierde una vida, y la nave reaparece en el centro a los 2 s parpadeando durante su invencibilidad.
+- [x] Al destruir todos los asteroides de un nivel, el nivel sube en 1 y aparecen `3 + nivel` asteroides grandes.
+- [x] Recoger el power-up activa el disparo triple durante 5 s, y el canvas muestra el indicador `3x N.Ns`.
+- [x] El canvas no dibuja el texto de score, nivel y vidas ni ningún overlay "GAME OVER".
+- [x] La nave se dibuja en cyan, los asteroides en blanco/magenta y las balas en amarillo.
 c
 **Integración con la plataforma**
 
-- [ ] Los valores de Puntuación, Vidas y Nivel del HUD React coinciden en todo momento con el estado del motor.
-- [ ] Al perder la tercera vida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
-- [ ] Con el modal abierto, escribir en el input de iniciales no mueve la nave ni dispara.
-- [ ] **GUARDAR PUNTUACIÓN** agrega a `localStorage` (`arcade-vault:saved-scores`) un registro con `gameId: "asteroids"` y la puntuación final.
-- [ ] **JUGAR DE NUEVO** cierra el modal y vuelve a la pantalla de inicio con score 0, 3 vidas y nivel 1.
-- [ ] **PAUSA** congela el juego, y **REANUDAR** lo continúa desde el mismo estado.
-- [ ] `P` y `Esc` alternan la pausa, y la etiqueta del botón cambia en consecuencia.
-- [ ] Cambiar de pestaña del navegador y volver deja el juego en pausa, con el botón mostrando **REANUDAR**.
-- [ ] **FIN** abre el modal con la puntuación actual.
-- [ ] Tras salir con **SALIR** y volver a entrar en `/games/asteroids/play`, solo corre un loop de juego: la nave no va al doble de velocidad y cada disparo sale una sola vez.
-- [ ] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3 y no hay overflow horizontal.
+- [x] Los valores de Puntuación, Vidas y Nivel del HUD React coinciden en todo momento con el estado del motor.
+- [x] Al perder la tercera vida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
+- [x] Con el modal abierto, escribir en el input de iniciales no mueve la nave ni dispara.
+- [x] **GUARDAR PUNTUACIÓN** agrega a `localStorage` (`arcade-vault:saved-scores`) un registro con `gameId: "asteroids"` y la puntuación final.
+- [x] **JUGAR DE NUEVO** cierra el modal y vuelve a la pantalla de inicio con score 0, 3 vidas y nivel 1.
+- [x] **PAUSA** congela el juego, y **REANUDAR** lo continúa desde el mismo estado.
+- [x] `P` y `Esc` alternan la pausa, y la etiqueta del botón cambia en consecuencia.
+- [x] Cambiar de pestaña del navegador y volver deja el juego en pausa, con el botón mostrando **REANUDAR**.
+- [x] **FIN** abre el modal con la puntuación actual.
+- [x] Tras salir con **SALIR** y volver a entrar en `/games/asteroids/play`, solo corre un loop de juego: la nave no va al doble de velocidad y cada disparo sale una sola vez.
+- [x] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3 y no hay overflow horizontal.
 
 **No regresiones**
 
-- [ ] `/games/rocas/play` y el resto de juegos sin motor siguen con la simulación actual de puntuación.
-- [ ] `next dev` no muestra errores en consola en `/`, `/games`, `/games/asteroids`, `/games/asteroids/play` ni `/leaderboard`.
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores en los archivos nuevos o modificados por esta spec.
+- [x] `/games/rocas/play` y el resto de juegos sin motor siguen con la simulación actual de puntuación.
+- [x] `next dev` no muestra errores en consola en `/`, `/games`, `/games/asteroids`, `/games/asteroids/play` ni `/leaderboard`.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores en los archivos nuevos o modificados por esta spec.
 
 ## Decisions
 
