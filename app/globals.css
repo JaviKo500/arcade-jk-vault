@@ -675,6 +675,13 @@ a { color: inherit; text-decoration: none; }
   font-size: 12px;
   text-align: center;
 }
+/* canvas de un motor real: resolución lógica 800×600 escalada al ancho del CRT */
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+}
 .crt-bottom {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 14px;
