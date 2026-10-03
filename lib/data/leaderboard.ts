@@ -1,3 +1,5 @@
+import { unstable_rethrow } from "next/navigation";
+
 import {
   LEADERBOARD_COLUMNS,
   toLeaderboardEntry,
@@ -30,6 +32,7 @@ export async function getLeaderboard(
         .filter((entry): entry is LeaderboardEntry => entry !== null),
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("getLeaderboard failed", error);
     return { ok: false };
   }

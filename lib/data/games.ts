@@ -1,10 +1,9 @@
+import { unstable_rethrow } from "next/navigation";
+
 import type { Game, GameCategory } from "@/data/games";
 import type { DataResult } from "@/lib/data/types";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
-
-// TODO(step 4): replace with Game once data/games.ts types playCount as number.
-type CatalogGame = Omit<Game, "playCount"> & { playCount: number };
 
 type GameRow = Database["public"]["Tables"]["games"]["Row"];
 type GameStatsRow = Database["public"]["Views"]["game_stats"]["Row"];
@@ -12,7 +11,7 @@ type GameStatsRow = Database["public"]["Views"]["game_stats"]["Row"];
 const GAME_COLUMNS =
   "id, title, short_description, long_description, category, cover, accent_color, sort_order, created_at";
 
-function toGame(row: GameRow, stats: GameStatsRow | undefined): CatalogGame {
+function toGame(row: GameRow, stats: GameStatsRow | undefined): Game {
   return {
     id: row.id,
     title: row.title,
@@ -26,7 +25,7 @@ function toGame(row: GameRow, stats: GameStatsRow | undefined): CatalogGame {
   };
 }
 
-export async function getGames(): Promise<DataResult<CatalogGame[]>> {
+export async function getGames(): Promise<DataResult<Game[]>> {
   try {
     const supabase = await createClient();
     const [games, stats] = await Promise.all([
@@ -45,6 +44,7 @@ export async function getGames(): Promise<DataResult<CatalogGame[]>> {
       data: games.data.map((row) => toGame(row, statsById.get(row.id))),
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("getGames failed", error);
     return { ok: false };
   }
@@ -52,7 +52,7 @@ export async function getGames(): Promise<DataResult<CatalogGame[]>> {
 
 export async function getGame(
   id: string,
-): Promise<DataResult<CatalogGame | null>> {
+): Promise<DataResult<Game | null>> {
   try {
     const supabase = await createClient();
     const [game, stats] = await Promise.all([
@@ -74,6 +74,7 @@ export async function getGame(
       data: game.data ? toGame(game.data, stats.data ?? undefined) : null,
     };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("getGame failed", error);
     return { ok: false };
   }

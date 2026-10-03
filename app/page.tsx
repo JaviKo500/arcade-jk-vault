@@ -1,10 +1,9 @@
-"use client";
-
 import Link from "next/link";
-import { GAMES } from "@/data/games";
 import { RECENT_SCORES, TOP_PLAYERS_TODAY } from "@/data/home-activity";
 import { MiniGameCard } from "@/components/mini-game-card";
-import { useReveal } from "@/hooks/use-reveal";
+import { RevealObserver } from "@/components/reveal-observer";
+import { SignalLost } from "@/components/signal-lost";
+import { getGames } from "@/lib/data/games";
 
 const FEATURES = [
   {
@@ -39,11 +38,14 @@ const STATS = [
   { n: "GLOBAL", u: "RANKING", s: "COMPITE CON EL MUNDO" },
 ] as const;
 
-export default function Home() {
-  useReveal();
+const HOME_GAMES_COUNT = 6;
+
+export default async function Home() {
+  const games = await getGames();
 
   return (
     <div className="home fade-in">
+      <RevealObserver />
       <section className="home-hero">
         <FloatingSilhouettes />
         <div className="home-hero-inner">
@@ -77,7 +79,7 @@ export default function Home() {
 
       <section className="home-section reveal">
         <div className="section-head">
-          <div className="kicker pixel neon-magenta">// 01</div>
+          <div className="kicker pixel neon-magenta">{"// 01"}</div>
           <h2 className="section-title">¿POR QUÉ ARCADE VAULT?</h2>
           <div className="section-rule" />
         </div>
@@ -98,15 +100,19 @@ export default function Home() {
 
       <section className="home-section reveal">
         <div className="section-head">
-          <div className="kicker pixel neon-cyan">// 02</div>
+          <div className="kicker pixel neon-cyan">{"// 02"}</div>
           <h2 className="section-title">JUEGOS DISPONIBLES AHORA</h2>
           <div className="section-rule" />
         </div>
-        <div className="mini-rail">
-          {GAMES.slice(0, 6).map((game) => (
-            <MiniGameCard key={game.id} game={game} />
-          ))}
-        </div>
+        {games.ok ? (
+          <div className="mini-rail">
+            {games.data.slice(0, HOME_GAMES_COUNT).map((game) => (
+              <MiniGameCard key={game.id} game={game} />
+            ))}
+          </div>
+        ) : (
+          <SignalLost variant="block" />
+        )}
         <div style={{ textAlign: "center", marginTop: 24 }}>
           <Link href="/games" className="btn lg">
             VER TODOS LOS JUEGOS →
@@ -132,7 +138,7 @@ export default function Home() {
 
       <section className="home-section reveal">
         <div className="section-head">
-          <div className="kicker pixel neon-yellow">// 03</div>
+          <div className="kicker pixel neon-yellow">{"// 03"}</div>
           <h2 className="section-title">ACTIVIDAD EN VIVO</h2>
           <div className="section-rule" />
         </div>
@@ -185,7 +191,7 @@ export default function Home() {
 
       <section className="home-section reveal">
         <div className="section-head">
-          <div className="kicker pixel neon-green">// 04</div>
+          <div className="kicker pixel neon-green">{"// 04"}</div>
           <h2 className="section-title">PRECIOS</h2>
           <div className="section-rule" />
         </div>

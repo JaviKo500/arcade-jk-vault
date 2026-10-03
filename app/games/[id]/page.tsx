@@ -1,14 +1,21 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GAMES } from "@/data/games";
 import { generateMockScores } from "@/data/leaderboard";
+import { SignalLost } from "@/components/signal-lost";
+import { getGame } from "@/lib/data/games";
+import { formatPlayCount } from "@/lib/format";
 
 export default async function GameDetailPage(
   props: PageProps<"/games/[id]">,
 ) {
   const { id } = await props.params;
-  const game = GAMES.find((g) => g.id === id);
+  const result = await getGame(id);
 
+  if (!result.ok) {
+    return <SignalLost />;
+  }
+
+  const game = result.data;
   if (!game) {
     notFound();
   }
@@ -33,7 +40,7 @@ export default async function GameDetailPage(
           <div className="stat-strip">
             <div>
               <div className="l">Partidas</div>
-              <div className="v">{game.playCount}</div>
+              <div className="v">{formatPlayCount(game.playCount)}</div>
             </div>
             <div>
               <div className="l">Mejor global</div>
