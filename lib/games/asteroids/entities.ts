@@ -258,10 +258,15 @@ export class Ship {
     return [new Bullet(ox, oy, this.angle)];
   }
 
-  draw(ctx: CanvasRenderingContext2D, colors: Palette) {
+  /** `blink: false` dibuja la nave fija (pantalla de inicio, sin tiempo corriendo). */
+  draw(ctx: CanvasRenderingContext2D, colors: Palette, blink = true) {
     if (this.dead) return;
     // Parpadeo durante invencibilidad de reaparición
-    if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0)
+    if (
+      blink &&
+      this.invincible > 0 &&
+      Math.floor(this.invincible * 8) % 2 === 0
+    )
       return;
 
     ctx.save();

@@ -312,7 +312,7 @@ export function createAsteroidsGame(
     state.asteroids.forEach((a) => a.draw(ctx, COLORS));
     state.powerUps.forEach((p) => p.draw(ctx, COLORS, fontFamily));
     state.bullets.forEach((b) => b.draw(ctx, COLORS));
-    state.ship.draw(ctx, COLORS);
+    state.ship.draw(ctx, COLORS, state.phase !== "ready");
 
     drawPowerUpIndicator();
     if (state.phase === "ready") drawStartScreen();
