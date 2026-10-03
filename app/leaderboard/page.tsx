@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BeTheFirst } from "@/components/be-the-first";
+import { PlayerBestRow } from "@/components/player-best-row";
 import { SignalLost } from "@/components/signal-lost";
 import { getGames } from "@/lib/data/games";
 import { getLeaderboard } from "@/lib/data/leaderboard";
@@ -76,6 +77,11 @@ export default async function LeaderboardPage(
                 <div className="dt">{r.date}</div>
               </div>
             ))}
+            <PlayerBestRow
+              gameId={game.id}
+              gameTitle={game.title}
+              animationDelay={rows.data.length * 50 + 50}
+            />
           </div>
         </>
       )}
