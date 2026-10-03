@@ -55,7 +55,7 @@ function resolveFontFamily(canvas: HTMLCanvasElement): string {
 export function createAsteroidsGame(
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
-): Pick<GameInstance, "start"> {
+): GameInstance {
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
@@ -65,10 +65,26 @@ export function createAsteroidsGame(
   const input: InputState = { keys: {} };
   const justPressed: Record<string, boolean> = {};
 
+  let inputEnabled = true;
+
+  // Teclas que la página no debe usar para hacer scroll mientras se juega
+  const GAME_KEYS = new Set([
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Space",
+  ]);
+
   function pressed(code: string) {
     const val = justPressed[code];
     justPressed[code] = false;
     return !!val;
+  }
+
+  function clearInput() {
+    for (const code of Object.keys(input.keys)) input.keys[code] = false;
+    for (const code of Object.keys(justPressed)) justPressed[code] = false;
   }
 
   // ── Estado ──────────────────────────────────────────────────────────────────
@@ -305,6 +321,7 @@ export function createAsteroidsGame(
   // ── Loop principal ──────────────────────────────────────────────────────────
   let rafId: number | null = null;
   let lastTime: number | null = null;
+  let destroyed = false;
 
   function loop(ts: number) {
     if (state.paused) {
@@ -317,15 +334,98 @@ export function createAsteroidsGame(
       update(dt);
     }
     sync();
+    // Un callback pudo haber destruido la instancia durante este frame
+    if (destroyed) return;
     draw();
     rafId = requestAnimationFrame(loop);
   }
 
+  // ── Listeners ───────────────────────────────────────────────────────────────
+  function onKeyDown(e: KeyboardEvent) {
+    // Con la entrada desactivada (modal abierto) no se toca el evento, para
+    // que el input de iniciales funcione con normalidad.
+    if (!inputEnabled) return;
+
+    if (e.code === "KeyP" || e.code === "Escape") {
+      if (!e.repeat) togglePause();
+      return;
+    }
+
+    if (GAME_KEYS.has(e.code)) e.preventDefault();
+    if (state.paused) return;
+    if (!input.keys[e.code]) justPressed[e.code] = true;
+    input.keys[e.code] = true;
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    // Siempre se suelta la tecla, aunque la entrada esté desactivada, para
+    // que ninguna quede "pegada" al volver a habilitarla.
+    input.keys[e.code] = false;
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) {
+      clearInput();
+      pause();
+    }
+  }
+
+  // ── API de control ──────────────────────────────────────────────────────────
   function start() {
-    if (rafId !== null) return;
+    if (destroyed || rafId !== null) return;
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     lastTime = null;
+    sync();
     rafId = requestAnimationFrame(loop);
   }
 
-  return { start };
+  function pause() {
+    if (state.phase === "gameover" || state.paused) return;
+    state.paused = true;
+    sync();
+  }
+
+  function resume() {
+    if (state.phase === "gameover" || !state.paused) return;
+    state.paused = false;
+    lastTime = null;
+    clearInput();
+    sync();
+  }
+
+  function togglePause() {
+    if (state.paused) resume();
+    else pause();
+  }
+
+  function restart() {
+    Object.assign(state, createInitialState());
+    lastTime = null;
+    clearInput();
+    sync();
+  }
+
+  function end() {
+    if (state.phase === "gameover") return;
+    state.paused = false;
+    gameOver();
+  }
+
+  function setInputEnabled(enabled: boolean) {
+    inputEnabled = enabled;
+    if (!enabled) clearInput();
+  }
+
+  function destroy() {
+    destroyed = true;
+    if (rafId !== null) cancelAnimationFrame(rafId);
+    rafId = null;
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("keyup", onKeyUp);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  }
+
+  return { start, pause, resume, restart, end, setInputEnabled, destroy };
 }
