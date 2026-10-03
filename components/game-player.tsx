@@ -42,7 +42,8 @@ export function GamePlayer({ game }: { game: Game }) {
     onScore: setScore,
     onLives: setLives,
     onLevel: setEngineLevel,
-    onPauseChange: () => {}, // la etiqueta del botón se sincroniza en el paso 8
+    // El motor es la fuente de verdad de la pausa (botón, P/Esc o pestaña oculta)
+    onPauseChange: setPaused,
     onGameOver: (finalScore) => {
       setScore(finalScore);
       setOver(true);
@@ -50,9 +51,29 @@ export function GamePlayer({ game }: { game: Game }) {
     },
   };
 
-  const endGame = () => setOver(true);
+  const togglePause = () => {
+    const engine = engineRef.current;
+    if (!engine) {
+      setPaused((p) => !p);
+      return;
+    }
+    if (paused) engine.resume();
+    else engine.pause();
+  };
+
+  // Con motor, end() dispara onGameOver, que abre el modal
+  const endGame = () => {
+    const engine = engineRef.current;
+    if (engine) engine.end();
+    else setOver(true);
+  };
 
   const restart = () => {
+    const engine = engineRef.current;
+    if (engine) {
+      engine.restart();
+      engine.setInputEnabled(true);
+    }
     setScore(0);
     setPaused(false);
     setOver(false);
@@ -88,7 +109,7 @@ export function GamePlayer({ game }: { game: Game }) {
           </div>
         </div>
         <div className="hud-actions">
-          <button className="btn yellow" onClick={() => setPaused((p) => !p)}>
+          <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
           <button className="btn magenta" onClick={endGame}>
