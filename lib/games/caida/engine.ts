@@ -446,9 +446,84 @@ export const createCaidaGame: GameFactory = (
     rafId = requestAnimationFrame(loop);
   }
 
+  // ── Entrada ─────────────────────────────────────────────────────────────────
+  // Teclas que la página no debe usar para hacer scroll (ni escribir) mientras se juega
+  const GAME_KEYS = new Set([
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Space",
+    "KeyX",
+  ]);
+
+  // Evita que la autorrepetición del Espacio que arrancó la partida haga
+  // hard drop mientras sigue pulsado. Se limpia con la siguiente pulsación nueva.
+  let swallowSpaceRepeat = false;
+
+  function moveHorizontal(dx: number) {
+    const { current } = state;
+    if (!collide(state.board, current.shape, current.x + dx, current.y))
+      current.x += dx;
+  }
+
+  // Se mantiene la autorrepetición del sistema operativo, como en el original.
+  function onKeyDown(e: KeyboardEvent) {
+    // Con la entrada desactivada (modal abierto) no se toca el evento, para
+    // que el input de iniciales funcione con normalidad.
+    if (!state.inputEnabled) return;
+
+    if (e.code === "KeyP" || e.code === "Escape") {
+      if (!e.repeat) togglePause();
+      return;
+    }
+
+    if (!GAME_KEYS.has(e.code)) return;
+    e.preventDefault();
+    if (state.paused || state.phase === "gameover") return;
+
+    if (e.code === "Space" && !e.repeat) swallowSpaceRepeat = false;
+
+    if (state.phase === "ready") {
+      // Arranca la partida y sale: esta pulsación no hace hard drop
+      if (e.code === "Space" && !e.repeat) {
+        state.phase = "playing";
+        state.dropAccum = 0;
+        swallowSpaceRepeat = true;
+      }
+      return;
+    }
+
+    switch (e.code) {
+      case "ArrowLeft":
+        moveHorizontal(-1);
+        break;
+      case "ArrowRight":
+        moveHorizontal(1);
+        break;
+      case "ArrowDown":
+        softDrop();
+        break;
+      case "ArrowUp":
+      case "KeyX":
+        tryRotate();
+        break;
+      case "Space":
+        if (!swallowSpaceRepeat) hardDrop();
+        break;
+    }
+    sync();
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) pause();
+  }
+
   // ── API de control ──────────────────────────────────────────────────────────
   function start() {
     if (destroyed || rafId !== null) return;
+    window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     lastTime = null;
     sync();
     rafId = requestAnimationFrame(loop);
@@ -467,9 +542,16 @@ export const createCaidaGame: GameFactory = (
     sync();
   }
 
+  function togglePause() {
+    if (state.paused) resume();
+    else pause();
+  }
+
+  // Tablero vacío, score 0, líneas 0, nivel 1 y vuelta a la pantalla de inicio
   function restart() {
     const { inputEnabled } = state;
     Object.assign(state, createInitialState(), { inputEnabled });
+    swallowSpaceRepeat = false;
     lastTime = null;
     sync();
   }
@@ -488,12 +570,9 @@ export const createCaidaGame: GameFactory = (
     destroyed = true;
     if (rafId !== null) cancelAnimationFrame(rafId);
     rafId = null;
+    window.removeEventListener("keydown", onKeyDown);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
   }
-
-  // Se conectan a la entrada de teclado en el paso 6
-  void softDrop;
-  void hardDrop;
-  void tryRotate;
 
   return { start, pause, resume, restart, end, setInputEnabled, destroy };
 };
