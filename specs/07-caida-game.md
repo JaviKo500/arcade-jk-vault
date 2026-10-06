@@ -1,6 +1,6 @@
 # SPEC 07 — Juego CAÍDA (Tetris) jugable con leaderboard
 
-> **Estado:** Approved · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 06 (`06-games-and-leaderboard-supabase.md` — tablas `games` y `scores`, leaderboard) · **Fecha:** 2026-10-05
+> **Estado:** Implemented · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 06 (`06-games-and-leaderboard-supabase.md` — tablas `games` y `scores`, leaderboard) · **Fecha:** 2026-10-05
 > **Objetivo:** Portar el Tetris de `references/03-tetris/` a un motor TypeScript que da vida al juego existente `caida` en `/games/caida/play`, envía puntuación, nivel y fin de partida al HUD y al leaderboard de la plataforma, y amplía el registro de motores con `hasLives` para que los juegos sin vidas oculten "Vidas" en el HUD.
 
 ## Scope
@@ -208,64 +208,64 @@ Cada paso deja el proyecto compilable y navegable con `next dev`.
 
 **Catálogo**
 
-- [ ] `public.games` mantiene la fila `caida` sin cambios (`title`, descripciones, `category = 'PUZZLE'`, `cover = 'cover-tetro'`, `accent_color = 'magenta'`, `sort_order = 3`), y no hay migración nueva en `supabase/migrations/`.
-- [ ] `/games` y Home muestran CAÍDA con la portada `cover-tetro`, igual que antes.
-- [ ] `/games/caida` muestra el detalle, y **JUGAR AHORA** lleva a `/games/caida/play`.
+- [x] `public.games` mantiene la fila `caida` sin cambios (`title`, descripciones, `category = 'PUZZLE'`, `cover = 'cover-tetro'`, `accent_color = 'magenta'`, `sort_order = 3`), y no hay migración nueva en `supabase/migrations/`.
+- [x] `/games` y Home muestran CAÍDA con la portada `cover-tetro`, igual que antes.
+- [x] `/games/caida` muestra el detalle, y **JUGAR AHORA** lleva a `/games/caida/play`.
 
 **Contrato**
 
-- [ ] `lib/games/types.ts` exporta `GameEngine`, y `GAME_ENGINES` es `Partial<Record<string, GameEngine>>`.
-- [ ] En `/games/caida/play` el HUD no muestra el bloque "Vidas".
-- [ ] En `/games/asteroids/play` y en los juegos con simulación, el HUD sigue mostrando "Vidas".
+- [x] `lib/games/types.ts` exporta `GameEngine`, y `GAME_ENGINES` es `Partial<Record<string, GameEngine>>`.
+- [x] En `/games/caida/play` el HUD no muestra el bloque "Vidas".
+- [x] En `/games/asteroids/play` y en los juegos con simulación, el HUD sigue mostrando "Vidas".
 
 **Motor**
 
-- [ ] Al entrar en `/games/caida/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR" y no cae ninguna pieza hasta pulsar Espacio.
-- [ ] La pulsación de Espacio que arranca la partida no hace hard drop de la primera pieza.
-- [ ] `←`/`→` mueven la pieza una columna, `↑` y `X` la rotan en sentido horario, `↓` la baja una fila y Espacio la deja caer hasta el fondo.
-- [ ] Una pieza pegada a la pared rota si alguno de los desplazamientos `0, −1, +1, −2, +2` la deja sin colisión. Si ninguno lo consigue, la pieza no cambia.
-- [ ] Aparecen las 8 piezas del original, incluida la tuerca (anillo 3×3 gris con el centro hueco).
-- [ ] La pieza fantasma se dibuja translúcida en la posición donde aterrizaría la pieza actual.
-- [ ] El panel derecho muestra la pieza SIGUIENTE, y coincide con la que aparece en el tablero tras fijar la actual.
-- [ ] Limpiar 1, 2, 3 o 4 líneas suma exactamente 100, 300, 500 u 800 × nivel. El soft drop suma 1 por fila y el hard drop 2 por celda recorrida.
-- [ ] El panel derecho muestra LÍNEAS con el total de líneas limpiadas.
-- [ ] Al llegar a 10 líneas el nivel pasa a 2 y la caída automática es visiblemente más rápida.
-- [ ] La partida termina cuando la pieza nueva colisiona al aparecer.
-- [ ] La puntuación nunca supera 10.000.000.
-- [ ] Mientras el canvas está montado, ni las flechas, ni Espacio, ni `X` hacen scroll de la página.
-- [ ] El canvas no dibuja puntuación, nivel ni ningún overlay de "GAME OVER" o "PAUSA".
-- [ ] Las piezas usan la paleta neón acordada sobre el fondo `#0a0a0f`.
-- [ ] `lib/games/caida/` no usa `localStorage`, no lee variables CSS de color y no tiene estado mutable a nivel de módulo.
+- [x] Al entrar en `/games/caida/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR" y no cae ninguna pieza hasta pulsar Espacio.
+- [x] La pulsación de Espacio que arranca la partida no hace hard drop de la primera pieza.
+- [x] `←`/`→` mueven la pieza una columna, `↑` y `X` la rotan en sentido horario, `↓` la baja una fila y Espacio la deja caer hasta el fondo.
+- [x] Una pieza pegada a la pared rota si alguno de los desplazamientos `0, −1, +1, −2, +2` la deja sin colisión. Si ninguno lo consigue, la pieza no cambia.
+- [x] Aparecen las 8 piezas del original, incluida la tuerca (anillo 3×3 gris con el centro hueco).
+- [x] La pieza fantasma se dibuja translúcida en la posición donde aterrizaría la pieza actual.
+- [x] El panel derecho muestra la pieza SIGUIENTE, y coincide con la que aparece en el tablero tras fijar la actual.
+- [x] Limpiar 1, 2, 3 o 4 líneas suma exactamente 100, 300, 500 u 800 × nivel. El soft drop suma 1 por fila y el hard drop 2 por celda recorrida.
+- [x] El panel derecho muestra LÍNEAS con el total de líneas limpiadas.
+- [x] Al llegar a 10 líneas el nivel pasa a 2 y la caída automática es visiblemente más rápida.
+- [x] La partida termina cuando la pieza nueva colisiona al aparecer.
+- [x] La puntuación nunca supera 10.000.000.
+- [x] Mientras el canvas está montado, ni las flechas, ni Espacio, ni `X` hacen scroll de la página.
+- [x] El canvas no dibuja puntuación, nivel ni ningún overlay de "GAME OVER" o "PAUSA".
+- [x] Las piezas usan la paleta neón acordada sobre el fondo `#0a0a0f`.
+- [x] `lib/games/caida/` no usa `localStorage`, no lee variables CSS de color y no tiene estado mutable a nivel de módulo.
 
 **Integración con la plataforma**
 
-- [ ] Puntuación y Nivel del HUD coinciden en todo momento con el estado del motor.
-- [ ] Al terminar la partida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
-- [ ] Con el modal abierto, escribir las iniciales (incluidas `X` y Espacio) no mueve ni rota ninguna pieza.
-- [ ] **PAUSA** congela la caída y **REANUDAR** la continúa desde el mismo estado. `P` y `Esc` alternan la pausa, y la etiqueta del botón cambia.
-- [ ] Con el juego en pausa, las flechas y Espacio no mueven la pieza.
-- [ ] Cambiar de pestaña y volver deja el juego en pausa, con el botón en **REANUDAR**.
-- [ ] Al reanudar tras una pausa larga, la pieza no da un salto de varias filas.
-- [ ] **FIN** abre el modal con la puntuación actual.
-- [ ] **JUGAR DE NUEVO** vuelve a la pantalla de inicio con el tablero vacío, Puntuación 0, Nivel 01 y LÍNEAS 0.
-- [ ] Tras **SALIR** y volver a entrar, solo corre un loop: la caída va a la velocidad normal y cada pulsación mueve la pieza una sola vez.
-- [ ] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3, sin overflow horizontal.
+- [x] Puntuación y Nivel del HUD coinciden en todo momento con el estado del motor.
+- [x] Al terminar la partida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
+- [x] Con el modal abierto, escribir las iniciales (incluidas `X` y Espacio) no mueve ni rota ninguna pieza.
+- [x] **PAUSA** congela la caída y **REANUDAR** la continúa desde el mismo estado. `P` y `Esc` alternan la pausa, y la etiqueta del botón cambia.
+- [x] Con el juego en pausa, las flechas y Espacio no mueven la pieza.
+- [x] Cambiar de pestaña y volver deja el juego en pausa, con el botón en **REANUDAR**.
+- [x] Al reanudar tras una pausa larga, la pieza no da un salto de varias filas.
+- [x] **FIN** abre el modal con la puntuación actual.
+- [x] **JUGAR DE NUEVO** vuelve a la pantalla de inicio con el tablero vacío, Puntuación 0, Nivel 01 y LÍNEAS 0.
+- [x] Tras **SALIR** y volver a entrar, solo corre un loop: la caída va a la velocidad normal y cada pulsación mueve la pieza una sola vez.
+- [x] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3, sin overflow horizontal.
 
 **Leaderboard**
 
-- [ ] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con `game_id = 'caida'`, el nombre normalizado y la puntuación final.
-- [ ] La puntuación aparece en `/leaderboard?game=caida` y en el top de `/games/caida`.
-- [ ] Recargar `/games` refleja el nuevo `playCount` de CAÍDA y, si la supera, el nuevo `bestScore`.
-- [ ] Con sesión iniciada, la fila "TU MEJOR MARCA" de `/leaderboard?game=caida` muestra la marca del jugador.
+- [x] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con `game_id = 'caida'`, el nombre normalizado y la puntuación final.
+- [x] La puntuación aparece en `/leaderboard?game=caida` y en el top de `/games/caida`.
+- [x] Recargar `/games` refleja el nuevo `playCount` de CAÍDA y, si la supera, el nuevo `bestScore`.
+- [x] Con sesión iniciada, la fila "TU MEJOR MARCA" de `/leaderboard?game=caida` muestra la marca del jugador.
 
 **No regresiones**
 
-- [ ] ASTEROIDS (motor, HUD con Vidas, pausa, modal y guardado) funciona igual que antes.
-- [ ] Los juegos sin motor siguen con la simulación.
-- [ ] `/leaderboard` sin parámetros sigue abriendo la pestaña ASTEROIDS.
-- [ ] `next dev` no muestra errores en consola en `/`, `/games`, `/games/caida`, `/games/caida/play`, `/games/asteroids/play` ni `/leaderboard?game=caida`.
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores en los archivos nuevos o modificados.
+- [x] ASTEROIDS (motor, HUD con Vidas, pausa, modal y guardado) funciona igual que antes.
+- [x] Los juegos sin motor siguen con la simulación.
+- [x] `/leaderboard` sin parámetros sigue abriendo la pestaña ASTEROIDS.
+- [x] `next dev` no muestra errores en consola en `/`, `/games`, `/games/caida`, `/games/caida/play`, `/games/asteroids/play` ni `/leaderboard?game=caida`.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores en los archivos nuevos o modificados.
 
 ## Decisions
 
