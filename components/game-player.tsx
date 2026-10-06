@@ -18,8 +18,11 @@ export function GamePlayer({ game }: { game: Game }) {
 
   // Si el juego tiene motor real, score, vidas y nivel vienen de él; si no,
   // se usa la simulación de puntuación.
-  const engineFactory = GAME_ENGINES[game.id];
+  const engine = GAME_ENGINES[game.id];
+  const engineFactory = engine?.factory;
   const hasEngine = engineFactory !== undefined;
+  // La simulación y los motores con vidas muestran "Vidas" en el HUD
+  const showLives = engine?.hasLives !== false;
   const engineRef = useRef<GameInstance | null>(null);
 
   const [score, setScore] = useState(0);
@@ -120,10 +123,12 @@ export function GamePlayer({ game }: { game: Game }) {
             <div className="l">Puntuación</div>
             <div className="v">{score.toLocaleString("es-ES")}</div>
           </div>
-          <div className="hud-stat lives">
-            <div className="l">Vidas</div>
-            <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
-          </div>
+          {showLives && (
+            <div className="hud-stat lives">
+              <div className="l">Vidas</div>
+              <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
+            </div>
+          )}
           <div className="hud-stat level">
             <div className="l">Nivel</div>
             <div className="v">{String(level).padStart(2, "0")}</div>
@@ -236,7 +241,10 @@ export function GamePlayer({ game }: { game: Game }) {
               <button className="btn" onClick={restart}>
                 JUGAR DE NUEVO
               </button>
-              <button className="btn magenta" onClick={() => router.push("/games")}>
+              <button
+                className="btn magenta"
+                onClick={() => router.push("/games")}
+              >
                 VOLVER AL VAULT
               </button>
             </div>
