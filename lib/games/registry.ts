@@ -1,4 +1,5 @@
 import { createAsteroidsGame } from "./asteroids/engine";
+import { createBloqueBusterGame } from "./bloque-buster/engine";
 import { createCaidaGame } from "./caida/engine";
 import type { GameEngine } from "./types";
 
@@ -6,5 +7,6 @@ import type { GameEngine } from "./types";
 // simulación de puntuación.
 export const GAME_ENGINES: Partial<Record<string, GameEngine>> = {
   asteroids: { factory: createAsteroidsGame },
+  "bloque-buster": { factory: createBloqueBusterGame },
   caida: { factory: createCaidaGame, hasLives: false },
 };
