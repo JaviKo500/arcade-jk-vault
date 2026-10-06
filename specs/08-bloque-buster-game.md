@@ -1,6 +1,6 @@
 # SPEC 08 — Juego BLOQUE BUSTER (Arkanoid) jugable con leaderboard
 
-> **Estado:** Approved · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 06 (`06-games-and-leaderboard-supabase.md` — tablas `games` y `scores`, leaderboard), SPEC 07 (`07-caida-game.md` — registro `GameEngine` con `hasLives`) · **Fecha:** 2026-10-05
+> **Estado:** Implemented · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 06 (`06-games-and-leaderboard-supabase.md` — tablas `games` y `scores`, leaderboard), SPEC 07 (`07-caida-game.md` — registro `GameEngine` con `hasLives`) · **Fecha:** 2026-10-05
 > **Objetivo:** Portar el Arkanoid de `references/04-arkanoid/` a un motor TypeScript que da vida al juego existente `bloque-buster` en `/games/bloque-buster/play`, con sonido, y que envía puntuación, vidas, nivel y fin de partida al HUD y al leaderboard de la plataforma.
 
 ## Scope
@@ -218,64 +218,64 @@ Cada paso deja el proyecto compilable y navegable con `next dev`.
 
 **Catálogo**
 
-- [ ] `public.games` mantiene la fila `bloque-buster` sin cambios (`title`, descripciones, `category = 'ARCADE'`, `cover = 'cover-bricks'`, `accent_color = 'cyan'`, `sort_order = 2`), y no hay migración nueva en `supabase/migrations/`.
-- [ ] `/games` y Home muestran BLOQUE BUSTER con la portada `cover-bricks`, igual que antes.
-- [ ] `/games/bloque-buster` muestra el detalle, y **JUGAR AHORA** lleva a `/games/bloque-buster/play`.
+- [x] `public.games` mantiene la fila `bloque-buster` sin cambios (`title`, descripciones, `category = 'ARCADE'`, `cover = 'cover-bricks'`, `accent_color = 'cyan'`, `sort_order = 2`), y no hay migración nueva en `supabase/migrations/`.
+- [x] `/games` y Home muestran BLOQUE BUSTER con la portada `cover-bricks`, igual que antes.
+- [x] `/games/bloque-buster` muestra el detalle, y **JUGAR AHORA** lleva a `/games/bloque-buster/play`.
 
 **Motor**
 
-- [ ] Al entrar en `/games/bloque-buster/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR" sobre el nivel 1, y la pelota no se mueve hasta pulsar Espacio.
-- [ ] `←`/`→` mueven la pala a velocidad constante, y la pala sigue al ratón sobre el canvas, también con el canvas escalado. La pala nunca sale de los bordes.
-- [ ] La pelota rebota en las paredes izquierda, derecha y superior, y en la pala.
-- [ ] Cada bloque roto desaparece con una animación de explosión breve y suma exactamente 10 puntos. En un mismo frame se rompe como máximo un bloque.
-- [ ] Los 5 niveles muestran los patrones del original, en este orden: parrilla completa, pirámide, ajedrez, filas con huecos y marco con cruz.
-- [ ] Al romper el último bloque de un nivel se carga el siguiente, la pelota vuelve sobre la pala, el Nivel del HUD sube en 1, la puntuación se conserva y la pelota es visiblemente más rápida.
-- [ ] Si la pelota cae por debajo de la pala, se resta una vida y la pelota se relanza al instante desde la pala.
-- [ ] La partida termina al perder la tercera vida.
-- [ ] La partida también termina al romper el último bloque del nivel 5, y el modal muestra la puntuación final (2.080 si no se perdió ningún bloque).
-- [ ] No existe ningún selector de nivel, y el clic sobre el canvas no hace nada.
-- [ ] Mientras el canvas está montado, ni las flechas ni Espacio hacen scroll de la página.
-- [ ] El canvas no dibuja puntuación, vidas, nivel ni ningún overlay de "GAME OVER", victoria o "PAUSA".
-- [ ] Bloques, pala y pelota usan la paleta neón acordada sobre el fondo `#0a0a0f`, sin cargar ninguna imagen.
-- [ ] `lib/games/bloque-buster/` no usa `localStorage`, no lee variables CSS de color y no tiene estado mutable a nivel de módulo.
+- [x] Al entrar en `/games/bloque-buster/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR" sobre el nivel 1, y la pelota no se mueve hasta pulsar Espacio.
+- [x] `←`/`→` mueven la pala a velocidad constante, y la pala sigue al ratón sobre el canvas, también con el canvas escalado. La pala nunca sale de los bordes.
+- [x] La pelota rebota en las paredes izquierda, derecha y superior, y en la pala.
+- [x] Cada bloque roto desaparece con una animación de explosión breve y suma exactamente 10 puntos. En un mismo frame se rompe como máximo un bloque.
+- [x] Los 5 niveles muestran los patrones del original, en este orden: parrilla completa, pirámide, ajedrez, filas con huecos y marco con cruz.
+- [x] Al romper el último bloque de un nivel se carga el siguiente, la pelota vuelve sobre la pala, el Nivel del HUD sube en 1, la puntuación se conserva y la pelota es visiblemente más rápida.
+- [x] Si la pelota cae por debajo de la pala, se resta una vida y la pelota se relanza al instante desde la pala.
+- [x] La partida termina al perder la tercera vida.
+- [x] La partida también termina al romper el último bloque del nivel 5, y el modal muestra la puntuación final (2.080 si no se perdió ningún bloque).
+- [x] No existe ningún selector de nivel, y el clic sobre el canvas no hace nada.
+- [x] Mientras el canvas está montado, ni las flechas ni Espacio hacen scroll de la página.
+- [x] El canvas no dibuja puntuación, vidas, nivel ni ningún overlay de "GAME OVER", victoria o "PAUSA".
+- [x] Bloques, pala y pelota usan la paleta neón acordada sobre el fondo `#0a0a0f`, sin cargar ninguna imagen.
+- [x] `lib/games/bloque-buster/` no usa `localStorage`, no lee variables CSS de color y no tiene estado mutable a nivel de módulo.
 
 **Sonido**
 
-- [ ] Suena `ball-bounce.mp3` al rebotar en las paredes y en la pala, y `break-sound.mp3` al romper un bloque.
-- [ ] Desde la pantalla de inicio no suena nada hasta pulsar Espacio, y la consola no muestra errores de autoplay.
-- [ ] Al pausar no suena nada nuevo y se cortan los sonidos en curso.
-- [ ] Tras **SALIR**, no sigue sonando nada.
+- [x] Suena `ball-bounce.mp3` al rebotar en las paredes y en la pala, y `break-sound.mp3` al romper un bloque.
+- [x] Desde la pantalla de inicio no suena nada hasta pulsar Espacio, y la consola no muestra errores de autoplay.
+- [x] Al pausar no suena nada nuevo y se cortan los sonidos en curso.
+- [x] Tras **SALIR**, no sigue sonando nada.
 
 **Integración con la plataforma**
 
-- [ ] Puntuación, Vidas y Nivel del HUD coinciden en todo momento con el estado del motor, y "Vidas" empieza en ♥ ♥ ♥.
-- [ ] Al terminar la partida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
-- [ ] Con el modal abierto, escribir las iniciales (incluido Espacio) o mover el ratón no afecta a la pala ni al juego.
-- [ ] **PAUSA** congela la pelota y la pala, y **REANUDAR** continúa desde el mismo estado. `P` y `Esc` alternan la pausa, y la etiqueta del botón cambia.
-- [ ] Con el juego en pausa, ni las flechas ni el ratón mueven la pala.
-- [ ] Cambiar de pestaña con una flecha pulsada y volver deja el juego en pausa, con el botón en **REANUDAR**, y al reanudar la pala no se mueve sola.
-- [ ] Al reanudar tras una pausa larga, la pelota no da un salto ni atraviesa bloques.
-- [ ] **FIN** abre el modal con la puntuación actual.
-- [ ] **JUGAR DE NUEVO** vuelve a la pantalla de inicio con el nivel 1 completo, Puntuación 0, Vidas ♥ ♥ ♥ y Nivel 01.
-- [ ] Tras **SALIR** y volver a entrar, solo corre un loop: la pelota va a la velocidad normal y cada rebote suena una sola vez.
-- [ ] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3, sin overflow horizontal.
+- [x] Puntuación, Vidas y Nivel del HUD coinciden en todo momento con el estado del motor, y "Vidas" empieza en ♥ ♥ ♥.
+- [x] Al terminar la partida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
+- [x] Con el modal abierto, escribir las iniciales (incluido Espacio) o mover el ratón no afecta a la pala ni al juego.
+- [x] **PAUSA** congela la pelota y la pala, y **REANUDAR** continúa desde el mismo estado. `P` y `Esc` alternan la pausa, y la etiqueta del botón cambia.
+- [x] Con el juego en pausa, ni las flechas ni el ratón mueven la pala.
+- [x] Cambiar de pestaña con una flecha pulsada y volver deja el juego en pausa, con el botón en **REANUDAR**, y al reanudar la pala no se mueve sola.
+- [x] Al reanudar tras una pausa larga, la pelota no da un salto ni atraviesa bloques.
+- [x] **FIN** abre el modal con la puntuación actual.
+- [x] **JUGAR DE NUEVO** vuelve a la pantalla de inicio con el nivel 1 completo, Puntuación 0, Vidas ♥ ♥ ♥ y Nivel 01.
+- [x] Tras **SALIR** y volver a entrar, solo corre un loop: la pelota va a la velocidad normal y cada rebote suena una sola vez.
+- [x] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3, sin overflow horizontal.
 
 **Leaderboard**
 
-- [ ] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con `game_id = 'bloque-buster'`, el nombre normalizado y la puntuación final.
-- [ ] La puntuación aparece en `/leaderboard?game=bloque-buster` y en el top de `/games/bloque-buster`.
-- [ ] Recargar `/games` refleja el nuevo `playCount` de BLOQUE BUSTER y, si la supera, el nuevo `bestScore`.
-- [ ] Con sesión iniciada, la fila "TU MEJOR MARCA" de `/leaderboard?game=bloque-buster` muestra la marca del jugador.
+- [x] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con `game_id = 'bloque-buster'`, el nombre normalizado y la puntuación final.
+- [x] La puntuación aparece en `/leaderboard?game=bloque-buster` y en el top de `/games/bloque-buster`.
+- [x] Recargar `/games` refleja el nuevo `playCount` de BLOQUE BUSTER y, si la supera, el nuevo `bestScore`.
+- [x] Con sesión iniciada, la fila "TU MEJOR MARCA" de `/leaderboard?game=bloque-buster` muestra la marca del jugador.
 
 **No regresiones**
 
-- [ ] ASTEROIDS (motor, HUD con Vidas, pausa, modal y guardado) funciona igual que antes.
-- [ ] CAÍDA (motor, HUD sin Vidas, pausa, modal y guardado) funciona igual que antes.
-- [ ] Los juegos sin motor siguen con la simulación.
-- [ ] `/leaderboard` sin parámetros sigue abriendo la pestaña ASTEROIDS.
-- [ ] `next dev` no muestra errores en consola en `/`, `/games`, `/games/bloque-buster`, `/games/bloque-buster/play` ni `/leaderboard?game=bloque-buster`.
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores en los archivos nuevos o modificados.
+- [x] ASTEROIDS (motor, HUD con Vidas, pausa, modal y guardado) funciona igual que antes.
+- [x] CAÍDA (motor, HUD sin Vidas, pausa, modal y guardado) funciona igual que antes.
+- [x] Los juegos sin motor siguen con la simulación.
+- [x] `/leaderboard` sin parámetros sigue abriendo la pestaña ASTEROIDS.
+- [x] `next dev` no muestra errores en consola en `/`, `/games`, `/games/bloque-buster`, `/games/bloque-buster/play` ni `/leaderboard?game=bloque-buster`.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores en los archivos nuevos o modificados.
 
 ## Decisions
 
