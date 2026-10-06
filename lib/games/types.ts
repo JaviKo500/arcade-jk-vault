@@ -14,7 +14,7 @@ export type GameInstance = {
   start: () => void;
   pause: () => void;
   resume: () => void;
-  /** Nueva partida: score 0, 3 vidas, nivel 1, vuelve a la pantalla de inicio. */
+  /** Nueva partida con el estado inicial del juego. Vuelve a la pantalla de inicio. */
   restart: () => void;
   /** Fuerza el fin de partida y dispara `onGameOver` con el score actual. */
   end: () => void;
@@ -28,3 +28,9 @@ export type GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
 ) => GameInstance;
+
+export type GameEngine = {
+  factory: GameFactory;
+  /** `false` en juegos sin vidas: el HUD oculta "Vidas" y el motor no llama a `onLives`. Por defecto, `true`. */
+  hasLives?: boolean;
+};
