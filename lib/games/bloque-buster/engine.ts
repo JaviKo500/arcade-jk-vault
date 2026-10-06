@@ -12,6 +12,8 @@ import {
   PADDLE_W,
   PADDLE_Y,
   POINTS_PER_BLOCK,
+  SOUNDS,
+  type SoundName,
   W,
 } from "./constants";
 import {
@@ -66,6 +68,32 @@ export const createBloqueBusterGame: GameFactory = (
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
+
+  // ── Sonido ──────────────────────────────────────────────────────────────────
+  // Solo suena desde update(), que no corre en `ready` ni en pausa: el primer
+  // sonido siempre llega después de pulsar Espacio.
+  const SOUND_VOLUME = 0.5;
+  const sounds: Record<SoundName, HTMLAudioElement> = {
+    bounce: new Audio(SOUNDS.bounce),
+    break: new Audio(SOUNDS.break),
+  };
+  const activeSounds = new Set<HTMLAudioElement>();
+
+  function playSound(name: SoundName) {
+    // Un clon por reproducción, como el original, para que se solapen
+    const clip = sounds[name].cloneNode() as HTMLAudioElement;
+    clip.volume = SOUND_VOLUME;
+    activeSounds.add(clip);
+    clip.addEventListener("ended", () => activeSounds.delete(clip), {
+      once: true,
+    });
+    clip.play().catch(() => activeSounds.delete(clip));
+  }
+
+  function stopSounds() {
+    for (const clip of activeSounds) clip.pause();
+    activeSounds.clear();
+  }
   const fontFamily = resolveFontFamily(canvas);
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
@@ -148,6 +176,7 @@ export const createBloqueBusterGame: GameFactory = (
     state.explosions.push({ x, y, w, h, color, elapsed: 0 });
     state.score += POINTS_PER_BLOCK;
     state.ball.vy = -state.ball.vy;
+    playSound("break");
 
     if (state.blocks.every((b) => !b.alive)) {
       if (state.level < LEVELS.length) loadLevel(state.level + 1);
@@ -184,14 +213,17 @@ export const createBloqueBusterGame: GameFactory = (
     if (ball.x <= 0) {
       ball.x = 0;
       ball.vx = Math.abs(ball.vx);
+      playSound("bounce");
     }
     if (ball.x + ball.w >= W) {
       ball.x = W - ball.w;
       ball.vx = -Math.abs(ball.vx);
+      playSound("bounce");
     }
     if (ball.y <= 0) {
       ball.y = 0;
       ball.vy = Math.abs(ball.vy);
+      playSound("bounce");
     }
 
     // Rebote en la pala: solo se invierte vy, con tolerancia por debajo del borde
@@ -204,6 +236,7 @@ export const createBloqueBusterGame: GameFactory = (
     ) {
       ball.y = paddle.y - ball.h;
       ball.vy = -Math.abs(ball.vy);
+      playSound("bounce");
     }
 
     // Bloques: como máximo uno por frame
@@ -362,6 +395,7 @@ export const createBloqueBusterGame: GameFactory = (
     // El keyup puede perderse (pestaña oculta): sin esto la pala se movería sola
     state.keys.left = false;
     state.keys.right = false;
+    stopSounds();
     sync();
   }
 
@@ -388,6 +422,7 @@ export const createBloqueBusterGame: GameFactory = (
   function end() {
     if (state.phase === "gameover") return;
     state.paused = false;
+    stopSounds();
     gameOver();
   }
 
@@ -401,6 +436,7 @@ export const createBloqueBusterGame: GameFactory = (
 
   function destroy() {
     destroyed = true;
+    stopSounds();
     if (rafId !== null) cancelAnimationFrame(rafId);
     rafId = null;
     window.removeEventListener("keydown", onKeyDown);
