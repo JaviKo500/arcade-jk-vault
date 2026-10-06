@@ -21,6 +21,10 @@ import {
   type Rect,
   buildBlocks,
   collideAABB,
+  drawBall,
+  drawBlock,
+  drawExplosion,
+  drawPaddle,
   resetBall,
 } from "./entities";
 import { LEVELS } from "./levels";
@@ -47,6 +51,14 @@ type EngineState = {
   level: number; // de 1 a LEVELS.length
 };
 
+/** Pila de fuentes de la plataforma, con `monospace` de respaldo. */
+function resolveFontFamily(canvas: HTMLCanvasElement): string {
+  const family = getComputedStyle(canvas)
+    .getPropertyValue("--font-press-start-2p")
+    .trim();
+  return family ? `${family}, monospace` : "monospace";
+}
+
 export const createBloqueBusterGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
@@ -54,6 +66,10 @@ export const createBloqueBusterGame: GameFactory = (
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
+  const fontFamily = resolveFontFamily(canvas);
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
 
   // ── Estado ──────────────────────────────────────────────────────────────────
   const state: EngineState = createInitialState();
@@ -208,10 +224,50 @@ export const createBloqueBusterGame: GameFactory = (
   }
 
   // ── Draw ────────────────────────────────────────────────────────────────────
-  // Provisional: el dibujo completo llega en el paso 4.
+  // Sin puntuación, vidas, nivel ni overlays: eso lo muestra la plataforma.
+  function text(
+    value: string,
+    x: number,
+    y: number,
+    size: number,
+    color: string,
+    glow = 0,
+  ) {
+    ctx.save();
+    ctx.font = `${size}px ${fontFamily}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = color;
+    if (glow) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = glow;
+    }
+    ctx.fillText(value, x, y);
+    ctx.restore();
+  }
+
+  // Entre la última fila de bloques (y = 224) y la pala (y = 560)
+  function drawStartScreen() {
+    const cx = W / 2;
+    text("BLOQUE BUSTER", cx, 330, 28, COLORS.paddle, 16);
+    // Parpadeo de máquina arcade, salvo con movimiento reducido
+    const visible =
+      reducedMotion || Math.floor(performance.now() / 500) % 2 === 0;
+    if (visible)
+      text("PULSA ESPACIO PARA EMPEZAR", cx, 390, 14, COLORS.text, 8);
+  }
+
   function draw() {
     ctx.fillStyle = COLORS.background;
     ctx.fillRect(0, 0, W, H);
+
+    for (const block of state.blocks) drawBlock(ctx, block);
+    for (const exp of state.explosions)
+      drawExplosion(ctx, exp, COLORS.blocks[exp.color]);
+    drawPaddle(ctx, state.paddle);
+    drawBall(ctx, state.ball);
+
+    if (state.phase === "ready") drawStartScreen();
   }
 
   // ── Loop principal ──────────────────────────────────────────────────────────
@@ -236,13 +292,97 @@ export const createBloqueBusterGame: GameFactory = (
     rafId = requestAnimationFrame(loop);
   }
 
+  // ── Entrada ─────────────────────────────────────────────────────────────────
+  // Teclas que la página no debe usar para hacer scroll mientras se juega
+  const GAME_KEYS = new Set(["ArrowLeft", "ArrowRight", "Space"]);
+
+  function onKeyDown(e: KeyboardEvent) {
+    // Con la entrada desactivada (modal abierto) no se toca el evento, para
+    // que el input de iniciales funcione con normalidad.
+    if (!state.inputEnabled) return;
+
+    if (e.code === "KeyP" || e.code === "Escape") {
+      if (!e.repeat && state.phase === "playing") togglePause();
+      return;
+    }
+
+    if (!GAME_KEYS.has(e.code)) return;
+    e.preventDefault();
+    if (state.paused || state.phase === "gameover") return;
+
+    if (e.code === "ArrowLeft") state.keys.left = true;
+    else if (e.code === "ArrowRight") state.keys.right = true;
+    else if (state.phase === "ready" && !e.repeat) {
+      state.phase = "playing";
+      lastTime = null;
+    }
+  }
+
+  function onKeyUp(e: KeyboardEvent) {
+    if (!state.inputEnabled) return;
+    if (!GAME_KEYS.has(e.code)) return;
+    e.preventDefault();
+    if (e.code === "ArrowLeft") state.keys.left = false;
+    else if (e.code === "ArrowRight") state.keys.right = false;
+  }
+
+  // La pala sigue al ratón, en coordenadas lógicas aunque el canvas esté escalado.
+  function onMouseMove(e: MouseEvent) {
+    if (!state.inputEnabled || state.paused || state.phase === "gameover")
+      return;
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width) return;
+    const mouseX = (e.clientX - rect.left) * (W / rect.width);
+    const { paddle } = state;
+    paddle.x = Math.max(0, Math.min(W - paddle.w, mouseX - paddle.w / 2));
+    // En la pantalla de inicio la pelota acompaña a la pala
+    if (state.phase === "ready")
+      resetBall(state.ball, paddle, LEVELS[state.level - 1].speed);
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) pause();
+  }
+
   // ── API de control ──────────────────────────────────────────────────────────
-  // Entrada, pausa, reinicio y limpieza completa llegan en el paso 5.
   function start() {
     if (destroyed || rafId !== null) return;
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    canvas.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     lastTime = null;
     sync();
     rafId = requestAnimationFrame(loop);
+  }
+
+  function pause() {
+    if (state.phase === "gameover" || state.paused) return;
+    state.paused = true;
+    // El keyup puede perderse (pestaña oculta): sin esto la pala se movería sola
+    state.keys.left = false;
+    state.keys.right = false;
+    sync();
+  }
+
+  function resume() {
+    if (state.phase === "gameover" || !state.paused) return;
+    state.paused = false;
+    lastTime = null;
+    sync();
+  }
+
+  function togglePause() {
+    if (state.paused) resume();
+    else pause();
+  }
+
+  // Nivel 1 completo, score 0, 3 vidas y vuelta a la pantalla de inicio
+  function restart() {
+    const { inputEnabled } = state;
+    Object.assign(state, createInitialState(), { inputEnabled });
+    lastTime = null;
+    sync();
   }
 
   function end() {
@@ -251,21 +391,23 @@ export const createBloqueBusterGame: GameFactory = (
     gameOver();
   }
 
+  function setInputEnabled(enabled: boolean) {
+    state.inputEnabled = enabled;
+    if (!enabled) {
+      state.keys.left = false;
+      state.keys.right = false;
+    }
+  }
+
   function destroy() {
     destroyed = true;
     if (rafId !== null) cancelAnimationFrame(rafId);
     rafId = null;
+    window.removeEventListener("keydown", onKeyDown);
+    window.removeEventListener("keyup", onKeyUp);
+    canvas.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
   }
 
-  const notYet = () => {};
-
-  return {
-    start,
-    pause: notYet,
-    resume: notYet,
-    restart: notYet,
-    end,
-    setInputEnabled: notYet,
-    destroy,
-  };
+  return { start, pause, resume, restart, end, setInputEnabled, destroy };
 };

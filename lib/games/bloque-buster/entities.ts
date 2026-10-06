@@ -43,24 +43,97 @@ export function collideAABB(a: Rect, b: Rect): boolean {
   );
 }
 
+// Estética "tubo de neón": interior oscuro teñido, contorno luminoso con
+// resplandor y un filo de brillo arriba. Todo con primitivas, sin imágenes.
+
 export function drawPaddle(ctx: CanvasRenderingContext2D, paddle: Rect): void {
+  const { x, y, w, h } = paddle;
+  const r = h / 2;
+  ctx.save();
+  ctx.shadowColor = COLORS.paddle;
+  ctx.shadowBlur = 18;
   ctx.fillStyle = COLORS.paddle;
-  ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fill();
+  ctx.restore();
+
+  // Línea central incandescente
+  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.fillRect(x + r, y + h / 2 - 1, w - r * 2, 2);
 }
 
 export function drawBall(ctx: CanvasRenderingContext2D, ball: Rect): void {
+  const cx = ball.x + ball.w / 2;
+  const cy = ball.y + ball.h / 2;
+  const r = ball.w / 2;
+  ctx.save();
+  ctx.shadowColor = COLORS.paddle;
+  ctx.shadowBlur = 14;
   ctx.fillStyle = COLORS.ball;
   ctx.beginPath();
-  ctx.arc(ball.x + ball.w / 2, ball.y + ball.h / 2, ball.w / 2, 0, Math.PI * 2);
+  ctx.arc(cx, cy, r - 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Reflejo
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.3, 0, Math.PI * 2);
   ctx.fill();
 }
 
+// Un bloque roto deja su hueco: un contorno discontinuo casi invisible que
+// mantiene legible el patrón del nivel.
 export function drawBlock(ctx: CanvasRenderingContext2D, block: Block): void {
-  ctx.fillStyle = COLORS.blocks[block.color];
-  ctx.fillRect(block.x + 1, block.y + 1, block.w - 2, block.h - 2);
+  const color = COLORS.blocks[block.color];
+  const x = block.x + 3;
+  const y = block.y + 3;
+  const w = block.w - 6;
+  const h = block.h - 6;
+
+  ctx.save();
+  if (!block.alive) {
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 4]);
+    ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    ctx.restore();
+    return;
+  }
+
+  // Interior teñido
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, w, h);
+
+  // Tubo luminoso
+  ctx.globalAlpha = 1;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 10;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.restore();
+
+  // Filo de brillo superior
+  ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.fillRect(x + 4, y + 4, w - 8, 1);
 }
 
-// 4 fases en EXPLOSION_DURATION, como los 4 frames del original.
+// Direcciones fijas de las esquirlas (unitarias, aplanadas en vertical como el bloque).
+const SHARDS: readonly [number, number][] = [
+  [-1, -0.6],
+  [0, -1],
+  [1, -0.6],
+  [1, 0.6],
+  [0, 1],
+  [-1, 0.6],
+];
+
+// 4 fases en EXPLOSION_DURATION, como los 4 frames del original:
+// 0 destello · 1 onda + esquirlas · 2 esquirlas lejos · 3 chispas.
 export function drawExplosion(
   ctx: CanvasRenderingContext2D,
   explosion: Explosion,
@@ -70,14 +143,42 @@ export function drawExplosion(
     Math.floor((explosion.elapsed / EXPLOSION_DURATION) * 4),
     3,
   );
-  const shrink = (phase + 1) * 4;
-  ctx.globalAlpha = 1 - phase / 4;
-  ctx.fillStyle = color;
-  ctx.fillRect(
-    explosion.x + shrink,
-    explosion.y + shrink / 2,
-    explosion.w - shrink * 2,
-    explosion.h - shrink,
-  );
-  ctx.globalAlpha = 1;
+  const { x, y, w, h } = explosion;
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16;
+
+  if (phase === 0) {
+    // Destello: el bloque se enciende al blanco
+    ctx.fillStyle = color;
+    ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.fillRect(x + 6, y + 6, w - 12, h - 12);
+    ctx.restore();
+    return;
+  }
+
+  // Onda: el contorno se expande y se apaga
+  if (phase < 3) {
+    const grow = phase * 5;
+    ctx.globalAlpha = phase === 1 ? 0.8 : 0.35;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - grow, y - grow, w + grow * 2, h + grow * 2);
+  }
+
+  // Esquirlas que se alejan y se encogen hasta quedar en chispas
+  const dist = [0, 14, 26, 36][phase];
+  const size = [0, 6, 4, 3][phase];
+  ctx.globalAlpha = [1, 1, 0.75, 0.5][phase];
+  ctx.fillStyle = phase === 3 ? "#ffffff" : color;
+  for (const [dx, dy] of SHARDS) {
+    const sx = cx + dx * (w / 2 + dist);
+    const sy = cy + dy * (h / 2 + dist * 0.5);
+    ctx.fillRect(sx - size / 2, sy - size / 2, size, size);
+  }
+  ctx.restore();
 }
