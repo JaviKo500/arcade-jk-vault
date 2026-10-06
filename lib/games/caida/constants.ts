@@ -71,7 +71,10 @@ export const MAX_DT = 0.05; // s
 // Paleta neón de la plataforma, ampliada a 8 colores de pieza.
 export const COLORS = {
   background: "#0a0a0f",
+  well: "#0e0e18", // fondo del tablero
   grid: "rgba(230, 233, 255, 0.06)",
+  accent: "#ff006e", // acento magenta de CAÍDA: raíles, títulos
+  keycap: "rgba(230, 233, 255, 0.35)",
   text: "#e6e9ff",
   textDim: "#8a8fb5",
   // Indexado de 1 a 8, igual que PIECES.
