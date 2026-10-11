@@ -97,25 +97,78 @@ export function drawGrid(ctx: CanvasRenderingContext2D): void {
   ctx.stroke();
 }
 
-// Sin `color`, cabeza `head` y cuerpo en degradado de `bodyFrom` a `bodyTo`.
-// Con `color` (p. ej. `dead`), toda la serpiente de ese color.
+// Grosor del tubo: cada segmento deja un margen de SNAKE_INSET px en la celda.
+const SNAKE_INSET = 3;
+const HEAD_INSET = 2;
+const HEAD_GLOW = 14;
+
+// Tubo de luz continuo: los segmentos se unen con puentes del mismo grosor.
+// Sin `color`, cabeza `head` con brillo y cuerpo en degradado de `bodyFrom`
+// (junto a la cabeza) a `bodyTo` (cola). Con `color` (p. ej. `dead`), toda la
+// serpiente de ese color.
 export function drawSnake(
   ctx: CanvasRenderingContext2D,
   snake: Cell[],
   color?: string,
 ): void {
-  for (let i = snake.length - 1; i >= 0; i--) {
-    const t = snake.length > 1 ? i / (snake.length - 1) : 0;
-    ctx.fillStyle =
-      color ??
-      (i === 0 ? COLORS.head : mixHex(COLORS.bodyFrom, COLORS.bodyTo, t));
+  if (snake.length === 0) return;
+  const size = CELL - SNAKE_INSET * 2;
+  const colorAt = (i: number) =>
+    color ??
+    mixHex(COLORS.bodyFrom, COLORS.bodyTo, i / Math.max(snake.length - 1, 1));
+
+  ctx.save();
+  // Cuerpo, de la cola hacia la cabeza
+  for (let i = snake.length - 1; i >= 1; i--) {
+    const cell = snake[i];
+    const toward = snake[i - 1];
+    ctx.fillStyle = colorAt(i);
+    const x = cell.col * CELL + SNAKE_INSET;
+    const y = cell.row * CELL + SNAKE_INSET;
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, 3);
+    ctx.fill();
+    // Puente hacia el segmento siguiente (más cerca de la cabeza)
+    const bx = Math.min(cell.col, toward.col) * CELL + SNAKE_INSET;
+    const by = Math.min(cell.row, toward.row) * CELL + SNAKE_INSET;
+    const horizontal = cell.row === toward.row;
     ctx.fillRect(
-      snake[i].col * CELL + 1,
-      snake[i].row * CELL + 1,
-      CELL - 2,
-      CELL - 2,
+      bx + (horizontal ? size / 2 : 0),
+      by + (horizontal ? 0 : size / 2),
+      horizontal ? CELL : size,
+      horizontal ? size : CELL,
     );
   }
+
+  // Cabeza, algo más ancha y con brillo
+  const head = snake[0];
+  const headColor = color ?? COLORS.head;
+  const hx = head.col * CELL + HEAD_INSET;
+  const hy = head.row * CELL + HEAD_INSET;
+  const hs = CELL - HEAD_INSET * 2;
+  ctx.shadowColor = headColor;
+  ctx.shadowBlur = HEAD_GLOW;
+  ctx.fillStyle = headColor;
+  ctx.beginPath();
+  ctx.roundRect(hx, hy, hs, hs, 5);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Ojos mirando hacia donde avanza (a la derecha si solo hay cabeza)
+  const dx = snake.length > 1 ? head.col - snake[1].col : 1;
+  const dy = snake.length > 1 ? head.row - snake[1].row : 0;
+  const cx = head.col * CELL + CELL / 2;
+  const cy = head.row * CELL + CELL / 2;
+  const eye = 3;
+  const forward = 3;
+  const spread = 4;
+  ctx.fillStyle = COLORS.background;
+  for (const side of [-1, 1]) {
+    const ex = cx + dx * forward + (dy !== 0 ? side * spread : 0);
+    const ey = cy + dy * forward + (dx !== 0 ? side * spread : 0);
+    ctx.fillRect(Math.round(ex - eye / 2), Math.round(ey - eye / 2), eye, eye);
+  }
+  ctx.restore();
 }
 
 // `image` es `null` si no cargó o falló: se dibuja el núcleo de respaldo.
@@ -128,16 +181,21 @@ export function drawFruit(
   const y = fruit.cell.row * CELL;
   const sprite = FRUIT_SPRITES[fruit.sprite];
   if (!image || !image.complete || image.naturalWidth === 0 || !sprite) {
+    ctx.save();
     ctx.fillStyle = COLORS.fruitFallback;
+    ctx.shadowColor = COLORS.fruitFallback;
+    ctx.shadowBlur = 10;
     ctx.beginPath();
-    ctx.arc(x + CELL / 2, y + CELL / 2, CELL * 0.35, 0, Math.PI * 2);
+    ctx.arc(x + CELL / 2, y + CELL / 2, CELL * 0.3, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
     return;
   }
   // Escala proporcional que cabe en la celda, centrada.
   const scale = Math.min(CELL / sprite.w, CELL / sprite.h);
   const dw = sprite.w * scale;
   const dh = sprite.h * scale;
+  ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(
     image,
@@ -150,6 +208,7 @@ export function drawFruit(
     dw,
     dh,
   );
+  ctx.restore();
 }
 
 // Interpola dos colores `#rrggbb`.

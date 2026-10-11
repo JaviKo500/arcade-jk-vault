@@ -1,6 +1,8 @@
 import type { GameCallbacks, GameFactory, GameInstance } from "../types";
 import {
   BASE_STEPS_PER_SECOND,
+  CELL,
+  COLORS,
   DEAD_DURATION,
   FRUITS_PER_LEVEL,
   FRUITS_SRC,
@@ -9,6 +11,7 @@ import {
   MAX_SCORE,
   MAX_STEPS_PER_SECOND,
   POINTS_PER_FRUIT,
+  W,
 } from "./constants";
 import {
   type Cell,
@@ -59,6 +62,14 @@ function sameCell(a: Cell, b: Cell): boolean {
   return a.col === b.col && a.row === b.row;
 }
 
+/** Pila de fuentes de la plataforma, con `monospace` de respaldo. */
+function resolveFontFamily(canvas: HTMLCanvasElement): string {
+  const family = getComputedStyle(canvas)
+    .getPropertyValue("--font-press-start-2p")
+    .trim();
+  return family ? `${family}, monospace` : "monospace";
+}
+
 export const createSerpentinaGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
@@ -66,6 +77,10 @@ export const createSerpentinaGame: GameFactory = (
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
+  const fontFamily = resolveFontFamily(canvas);
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)",
+  ).matches;
 
   // ── Estado ──────────────────────────────────────────────────────────────────
   const state: EngineState = createInitialState();
@@ -218,10 +233,85 @@ export const createSerpentinaGame: GameFactory = (
 
   // ── Draw ────────────────────────────────────────────────────────────────────
   // Sin puntuación, vidas, nivel ni overlays: eso lo muestra la plataforma.
+  function text(
+    value: string,
+    x: number,
+    y: number,
+    size: number,
+    color: string,
+    glow = 0,
+  ) {
+    ctx.save();
+    ctx.font = `${size}px ${fontFamily}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = color;
+    if (glow) {
+      ctx.shadowColor = color;
+      ctx.shadowBlur = glow;
+    }
+    ctx.fillText(value, x, y);
+    ctx.restore();
+  }
+
+  // Parpadeo de máquina arcade (on/off cada `periodMs`), salvo con movimiento reducido
+  function blinkOn(periodMs: number): boolean {
+    return reducedMotion || Math.floor(performance.now() / periodMs) % 2 === 0;
+  }
+
+  // La serpiente ocupa la fila 15 (y = 300–320): el texto va por encima y por debajo
+  function drawStartScreen() {
+    const cx = W / 2;
+    text("SERPENTINA", cx, 210, 32, COLORS.head, 18);
+    if (!state.imageReady) text("CARGANDO…", cx, 400, 14, COLORS.textDim);
+    else if (blinkOn(500))
+      text("PULSA ESPACIO PARA EMPEZAR", cx, 400, 14, COLORS.text, 8);
+    text("FLECHAS O WASD PARA GIRAR", cx, 444, 10, COLORS.textDim);
+  }
+
+  // Flechas en las celdas a las que se puede salir (todas menos la izquierda)
+  function drawWaitingHint() {
+    const head = state.snake[0];
+    const alpha = reducedMotion
+      ? 0.8
+      : 0.45 + 0.4 * Math.sin(performance.now() / 160);
+    const hints: [Direction, number, number][] = [
+      ["up", 0, -1],
+      ["down", 0, 1],
+      ["right", 1, 0],
+    ];
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = COLORS.head;
+    for (const [, dx, dy] of hints) {
+      const cx = (head.col + dx) * CELL + CELL / 2;
+      const cy = (head.row + dy) * CELL + CELL / 2;
+      // Triángulo de 8 px que apunta hacia fuera de la cabeza
+      const tip = 4;
+      const base = 4;
+      ctx.beginPath();
+      ctx.moveTo(cx + dx * tip, cy + dy * tip);
+      ctx.lineTo(cx - dx * tip + dy * base, cy - dy * tip + dx * base);
+      ctx.lineTo(cx - dx * tip - dy * base, cy - dy * tip - dx * base);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+    text("PULSA UNA DIRECCIÓN", W / 2, 400, 12, COLORS.text, 6);
+  }
+
   function draw() {
     drawGrid(ctx);
     drawFruit(ctx, fruitsImage, state.fruit);
-    drawSnake(ctx, state.snake);
+
+    // Tras un choque, la serpiente alterna entre magenta y sus colores
+    const flash =
+      state.phase === "dead" &&
+      (reducedMotion || Math.floor(state.deadTimer * 10) % 2 === 0);
+    drawSnake(ctx, state.snake, flash ? COLORS.dead : undefined);
+
+    if (state.phase === "ready") drawStartScreen();
+    else if (state.phase === "waiting") drawWaitingHint();
   }
 
   // ── Loop principal ──────────────────────────────────────────────────────────
