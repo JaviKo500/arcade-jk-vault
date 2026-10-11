@@ -22,6 +22,7 @@ import {
   drawSnake,
   hitsWallOrBody,
   initialSnake,
+  isOpposite,
   nextHead,
   spawnFruit,
 } from "./entities";
@@ -336,22 +337,125 @@ export const createSerpentinaGame: GameFactory = (
     rafId = requestAnimationFrame(loop);
   }
 
+  // ── Entrada ─────────────────────────────────────────────────────────────────
+  // Teclas que la página no debe usar para hacer scroll mientras se juega
+  const SCROLL_KEYS = new Set([
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "Space",
+  ]);
+
+  const DIRECTION_KEYS: Partial<Record<string, Direction>> = {
+    ArrowUp: "up",
+    KeyW: "up",
+    ArrowDown: "down",
+    KeyS: "down",
+    ArrowLeft: "left",
+    KeyA: "left",
+    ArrowRight: "right",
+    KeyD: "right",
+  };
+
+  // Un giro por paso, comparado con la dirección del último paso aplicado.
+  // Un segundo giro en el mismo paso va al búfer (si está libre).
+  function turn(dir: Direction) {
+    if (state.nextDirection === null) {
+      if (dir === state.direction || isOpposite(dir, state.direction)) return;
+      state.nextDirection = dir;
+    } else if (state.queuedDirection === null) {
+      const after = state.nextDirection;
+      if (dir === after || isOpposite(dir, after)) return;
+      state.queuedDirection = dir;
+    }
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    // Con la entrada desactivada (modal abierto) no se toca el evento, para
+    // que el input de iniciales funcione con normalidad.
+    if (!state.inputEnabled) return;
+
+    if (e.code === "KeyP" || e.code === "Escape") {
+      const { phase } = state;
+      if (
+        !e.repeat &&
+        (phase === "playing" || phase === "dead" || phase === "waiting")
+      )
+        togglePause();
+      return;
+    }
+
+    if (SCROLL_KEYS.has(e.code)) e.preventDefault();
+    if (state.paused || state.phase === "gameover") return;
+
+    if (e.code === "Space") {
+      if (state.phase === "ready" && state.imageReady && !e.repeat) {
+        state.phase = "playing";
+        state.stepTimer = 0;
+        lastTime = null;
+      }
+      return;
+    }
+
+    const dir = DIRECTION_KEYS[e.code];
+    if (!dir) return;
+    if (state.phase === "playing") turn(dir);
+    else if (state.phase === "waiting" && dir !== "left") {
+      state.direction = dir;
+      state.nextDirection = null;
+      state.queuedDirection = null;
+      state.stepTimer = 0;
+      state.phase = "playing";
+    }
+  }
+
+  function onVisibilityChange() {
+    if (document.hidden) pause();
+  }
+
   // ── API de control ──────────────────────────────────────────────────────────
-  // Entrada de teclado, pausa, reinicio y el resto del ciclo de vida: Paso 6.
   function start() {
     if (destroyed || rafId !== null) return;
+    window.addEventListener("keydown", onKeyDown);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     lastTime = null;
     sync();
     rafId = requestAnimationFrame(loop);
   }
 
-  function pause() {}
+  function pause() {
+    if (state.phase === "gameover" || state.paused) return;
+    state.paused = true;
+    sync();
+  }
 
-  function resume() {}
+  function resume() {
+    if (state.phase === "gameover" || !state.paused) return;
+    state.paused = false;
+    lastTime = null;
+    sync();
+  }
 
-  function restart() {}
+  function togglePause() {
+    if (state.paused) resume();
+    else pause();
+  }
 
-  function end() {}
+  // Serpiente inicial, score 0, 3 vidas, nivel 1 y vuelta a la pantalla de inicio.
+  // La imagen ya cargada no se vuelve a esperar.
+  function restart() {
+    const { inputEnabled, imageReady } = state;
+    Object.assign(state, createInitialState(), { inputEnabled, imageReady });
+    lastTime = null;
+    sync();
+  }
+
+  function end() {
+    if (state.phase === "gameover") return;
+    state.paused = false;
+    gameOver();
+  }
 
   function setInputEnabled(enabled: boolean) {
     state.inputEnabled = enabled;
@@ -361,6 +465,8 @@ export const createSerpentinaGame: GameFactory = (
     destroyed = true;
     if (rafId !== null) cancelAnimationFrame(rafId);
     rafId = null;
+    window.removeEventListener("keydown", onKeyDown);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
     fruitsImage.removeEventListener("load", onImageSettled);
     fruitsImage.removeEventListener("error", onImageSettled);
   }
