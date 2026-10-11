@@ -1,6 +1,6 @@
 # SPEC 09 — Juego SERPENTINA (Snake) jugable con leaderboard
 
-> **Estado:** Approved · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 06 (`06-games-and-leaderboard-supabase.md` — tablas `games` y `scores`, leaderboard), SPEC 07 (`07-caida-game.md` — registro `GameEngine` con `hasLives`), SPEC 08 (`08-bloque-buster-game.md` — assets en `public/games/<id>/`) · **Fecha:** 2026-10-11
+> **Estado:** Implemented · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 06 (`06-games-and-leaderboard-supabase.md` — tablas `games` y `scores`, leaderboard), SPEC 07 (`07-caida-game.md` — registro `GameEngine` con `hasLives`), SPEC 08 (`08-bloque-buster-game.md` — assets en `public/games/<id>/`) · **Fecha:** 2026-10-11
 > **Objetivo:** Crear un Snake original como motor TypeScript que da vida al juego existente `serpentina` en `/games/serpentina/play`, con las frutas pixel art de `references/source-assets/snake-assets/`, 3 vidas, y puntuación, vidas, nivel y fin de partida enviados al HUD y al leaderboard de Supabase.
 
 ## Scope
@@ -216,62 +216,62 @@ Cada paso deja el proyecto compilable y navegable con `next dev`.
 
 **Catálogo**
 
-- [ ] `public.games` mantiene la fila `serpentina` con el mismo `id`, `title = 'SERPENTINA'`, `category = 'ARCADE'`, `cover = 'cover-snake'`, `accent_color = 'green'` y `sort_order = 4`, y con `short_description` y `long_description` iguales a las del Data model.
-- [ ] Existe la migración `supabase/migrations/*_serpentina_engine.sql`, y `npx supabase migration list` la muestra aplicada en el remoto. Solo contiene el `update` de las descripciones.
-- [ ] `lib/supabase/database.types.ts` no cambia.
-- [ ] `/games` y Home muestran SERPENTINA con la portada `cover-snake` (igual que antes) y la nueva descripción corta.
-- [ ] `/games/serpentina` muestra la nueva descripción larga, y **JUGAR AHORA** lleva a `/games/serpentina/play`.
+- [x] `public.games` mantiene la fila `serpentina` con el mismo `id`, `title = 'SERPENTINA'`, `category = 'ARCADE'`, `cover = 'cover-snake'`, `accent_color = 'green'` y `sort_order = 4`, y con `short_description` y `long_description` iguales a las del Data model.
+- [x] Existe la migración `supabase/migrations/*_serpentina_engine.sql`, y `npx supabase migration list` la muestra aplicada en el remoto. Solo contiene el `update` de las descripciones.
+- [x] `lib/supabase/database.types.ts` no cambia.
+- [x] `/games` y Home muestran SERPENTINA con la portada `cover-snake` (igual que antes) y la nueva descripción corta.
+- [x] `/games/serpentina` muestra la nueva descripción larga, y **JUGAR AHORA** lleva a `/games/serpentina/play`.
 
 **Motor**
 
-- [ ] Al entrar en `/games/serpentina/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR" con la serpiente de 3 segmentos en el centro y una fruta. Nada se mueve hasta pulsar Espacio.
-- [ ] Tras pulsar Espacio, la serpiente avanza hacia la derecha celda a celda, a 8 pasos/s en el nivel 1.
-- [ ] Las flechas y WASD cambian la dirección. Pulsar la dirección opuesta no hace nada.
-- [ ] Dos giros rápidos dentro del mismo paso (por ejemplo, ↑ y luego ← yendo a la derecha) se aplican en dos pasos consecutivos, sin que la serpiente se muerda.
-- [ ] Comer una fruta alarga la serpiente 1 segmento, suma exactamente 10 × nivel puntos y hace aparecer otra fruta en una celda libre.
-- [ ] Las frutas son sprites pixel art de `fruits.png`, varían entre apariciones, caben en una celda y se ven nítidas (sin suavizado).
-- [ ] La fruta nunca aparece sobre la serpiente.
-- [ ] Tras 5 frutas, el Nivel del HUD pasa a 02 y la serpiente va visiblemente más rápida. La velocidad deja de subir a partir del nivel 13.
-- [ ] Chocar con una pared o con el propio cuerpo resta una vida. La serpiente parpadea en magenta durante 1 s y reaparece en el centro con 3 segmentos, mirando a la derecha y quieta.
-- [ ] Tras reaparecer, la serpiente no se mueve hasta pulsar una flecha o WASD. Puntuación y nivel se conservan.
-- [ ] Avanzar hacia la celda que la cola deja libre en ese mismo paso no cuenta como choque.
-- [ ] La partida termina al perder la tercera vida.
-- [ ] Si `fruits.png` no carga (por ejemplo, renombrado el archivo), el juego sigue siendo jugable con un núcleo magenta como fruta.
-- [ ] Mientras el canvas está montado, ni las flechas ni Espacio hacen scroll de la página.
-- [ ] El canvas no dibuja puntuación, vidas, nivel ni ningún overlay de "GAME OVER" o "PAUSA".
-- [ ] `lib/games/serpentina/` no usa `localStorage`, no lee variables CSS de color y no tiene estado mutable a nivel de módulo.
-- [ ] La suma de puntos usa `Math.min(…, MAX_SCORE)` con `MAX_SCORE = 10_000_000`.
+- [x] Al entrar en `/games/serpentina/play`, el canvas muestra "PULSA ESPACIO PARA EMPEZAR" con la serpiente de 3 segmentos en el centro y una fruta. Nada se mueve hasta pulsar Espacio.
+- [x] Tras pulsar Espacio, la serpiente avanza hacia la derecha celda a celda, a 8 pasos/s en el nivel 1.
+- [x] Las flechas y WASD cambian la dirección. Pulsar la dirección opuesta no hace nada.
+- [x] Dos giros rápidos dentro del mismo paso (por ejemplo, ↑ y luego ← yendo a la derecha) se aplican en dos pasos consecutivos, sin que la serpiente se muerda.
+- [x] Comer una fruta alarga la serpiente 1 segmento, suma exactamente 10 × nivel puntos y hace aparecer otra fruta en una celda libre.
+- [x] Las frutas son sprites pixel art de `fruits.png`, varían entre apariciones, caben en una celda y se ven nítidas (sin suavizado).
+- [x] La fruta nunca aparece sobre la serpiente.
+- [x] Tras 5 frutas, el Nivel del HUD pasa a 02 y la serpiente va visiblemente más rápida. La velocidad deja de subir a partir del nivel 13.
+- [x] Chocar con una pared o con el propio cuerpo resta una vida. La serpiente parpadea en magenta durante 1 s y reaparece en el centro con 3 segmentos, mirando a la derecha y quieta.
+- [x] Tras reaparecer, la serpiente no se mueve hasta pulsar una flecha o WASD. Puntuación y nivel se conservan.
+- [x] Avanzar hacia la celda que la cola deja libre en ese mismo paso no cuenta como choque.
+- [x] La partida termina al perder la tercera vida.
+- [x] Si `fruits.png` no carga (por ejemplo, renombrado el archivo), el juego sigue siendo jugable con un núcleo magenta como fruta.
+- [x] Mientras el canvas está montado, ni las flechas ni Espacio hacen scroll de la página.
+- [x] El canvas no dibuja puntuación, vidas, nivel ni ningún overlay de "GAME OVER" o "PAUSA".
+- [x] `lib/games/serpentina/` no usa `localStorage`, no lee variables CSS de color y no tiene estado mutable a nivel de módulo.
+- [x] La suma de puntos usa `Math.min(…, MAX_SCORE)` con `MAX_SCORE = 10_000_000`.
 
 **Integración con la plataforma**
 
-- [ ] Puntuación, Vidas y Nivel del HUD coinciden en todo momento con el estado del motor, y "Vidas" empieza en ♥ ♥ ♥.
-- [ ] Al terminar la partida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
-- [ ] Con el modal abierto, escribir las iniciales (incluidos Espacio, W, A, S y D) no afecta al juego, y el input recibe esas letras.
-- [ ] **PAUSA** congela la serpiente, y **REANUDAR** continúa desde el mismo estado. `P` y `Esc` alternan la pausa y la etiqueta del botón cambia.
-- [ ] Con el juego en pausa, las flechas y WASD no cambian la dirección.
-- [ ] Cambiar de pestaña y volver deja el juego en pausa, con el botón en **REANUDAR**.
-- [ ] Al reanudar tras una pausa larga, la serpiente no avanza varias celdas de golpe.
-- [ ] **FIN** abre el modal con la puntuación actual.
-- [ ] **JUGAR DE NUEVO** vuelve a la pantalla de inicio con la serpiente inicial, Puntuación 0, Vidas ♥ ♥ ♥ y Nivel 01.
-- [ ] Tras **SALIR** y volver a entrar, solo corre un loop: la serpiente va a la velocidad normal.
-- [ ] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3, sin overflow horizontal.
+- [x] Puntuación, Vidas y Nivel del HUD coinciden en todo momento con el estado del motor, y "Vidas" empieza en ♥ ♥ ♥.
+- [x] Al terminar la partida se abre el modal "FIN DEL JUEGO" con la puntuación final del motor.
+- [x] Con el modal abierto, escribir las iniciales (incluidos Espacio, W, A, S y D) no afecta al juego, y el input recibe esas letras.
+- [x] **PAUSA** congela la serpiente, y **REANUDAR** continúa desde el mismo estado. `P` y `Esc` alternan la pausa y la etiqueta del botón cambia.
+- [x] Con el juego en pausa, las flechas y WASD no cambian la dirección.
+- [x] Cambiar de pestaña y volver deja el juego en pausa, con el botón en **REANUDAR**.
+- [x] Al reanudar tras una pausa larga, la serpiente no avanza varias celdas de golpe.
+- [x] **FIN** abre el modal con la puntuación actual.
+- [x] **JUGAR DE NUEVO** vuelve a la pantalla de inicio con la serpiente inicial, Puntuación 0, Vidas ♥ ♥ ♥ y Nivel 01.
+- [x] Tras **SALIR** y volver a entrar, solo corre un loop: la serpiente va a la velocidad normal.
+- [x] En un viewport de 480 px de ancho, el canvas se escala manteniendo la proporción 4:3, sin overflow horizontal.
 
 **Leaderboard**
 
-- [ ] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con `game_id = 'serpentina'`, el nombre normalizado y la puntuación final.
-- [ ] La puntuación aparece en `/leaderboard?game=serpentina` y en el top de `/games/serpentina`.
-- [ ] Recargar `/games` refleja el nuevo `playCount` de SERPENTINA y, si la supera, el nuevo `bestScore`.
-- [ ] Con sesión iniciada, la fila "TU MEJOR MARCA" de `/leaderboard?game=serpentina` muestra la marca del jugador.
+- [x] **GUARDAR PUNTUACIÓN** inserta una fila en `scores` con `game_id = 'serpentina'`, el nombre normalizado y la puntuación final.
+- [x] La puntuación aparece en `/leaderboard?game=serpentina` y en el top de `/games/serpentina`.
+- [x] Recargar `/games` refleja el nuevo `playCount` de SERPENTINA y, si la supera, el nuevo `bestScore`.
+- [x] Con sesión iniciada, la fila "TU MEJOR MARCA" de `/leaderboard?game=serpentina` muestra la marca del jugador.
 
 **No regresiones**
 
-- [ ] ASTEROIDS y BLOQUE BUSTER (motor, HUD con Vidas, pausa, modal y guardado) funcionan igual que antes.
-- [ ] CAÍDA (motor, HUD sin Vidas, pausa, modal y guardado) funciona igual que antes.
-- [ ] Los juegos sin motor siguen con la simulación.
-- [ ] `/leaderboard` sin parámetros sigue abriendo la pestaña ASTEROIDS.
-- [ ] `next dev` no muestra errores en consola en `/`, `/games`, `/games/serpentina`, `/games/serpentina/play` ni `/leaderboard?game=serpentina`.
-- [ ] `npm run build` termina sin errores.
-- [ ] `npm run lint` no reporta errores en los archivos nuevos o modificados.
+- [x] ASTEROIDS y BLOQUE BUSTER (motor, HUD con Vidas, pausa, modal y guardado) funcionan igual que antes.
+- [x] CAÍDA (motor, HUD sin Vidas, pausa, modal y guardado) funciona igual que antes.
+- [x] Los juegos sin motor siguen con la simulación.
+- [x] `/leaderboard` sin parámetros sigue abriendo la pestaña ASTEROIDS.
+- [x] `next dev` no muestra errores en consola en `/`, `/games`, `/games/serpentina`, `/games/serpentina/play` ni `/leaderboard?game=serpentina`.
+- [x] `npm run build` termina sin errores.
+- [x] `npm run lint` no reporta errores en los archivos nuevos o modificados.
 
 ## Decisions
 
