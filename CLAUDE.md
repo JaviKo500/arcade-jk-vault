@@ -36,6 +36,7 @@ There is no test script configured yet.
 - Use always `/frontend-design` for designing user views.
 - `/spec` and `/spec-impl` (fernando-skills): write and implement specs.
 - `/add-game` (project skill, `.claude/skills/add-game/`): generates a `specs/NN-<id>-game.md` spec (Draft) to port a game from `references/started-games/` or design one from scratch, then implement it with `/spec-impl`. Its `platform-contract.md` documents the real integration points (engine contract, registry, catalog, scores) — keep it in sync when that contract changes.
+- `game-planner` (subagent, `.claude/agents/game-planner.md`): decides which game fits the platform next, records each suggestion in `references/game-suggestions-todo.md` and drafts its `specs/NN-<id>-game.md` (Draft) following `/add-game`. Keeps persistent memory of past suggestions in `.claude/agent-memory/game-planner/` (commit it).
 - `/msg-commit`: conventional commit message in English from staged changes. Commits follow `type(scope): message` (e.g. `feat(serpentina): ...`, `docs(spec): ...`).
 - **PostToolUse hook** (`.claude/settings.json` → `.claude/hooks/format-and-lint.mjs`): every Write/Edit runs Prettier and `eslint --fix` on the file; it exits 2 with the errors if lint errors remain, so fix them rather than ignoring the hook output.
 - **Supabase MCP** (`.mcp.json`) is connected to project `fvbuzwmfygecfketwpsr` — use it to inspect tables, run SQL, check advisors and logs.
