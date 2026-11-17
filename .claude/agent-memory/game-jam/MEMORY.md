@@ -4,4 +4,4 @@
 
 ## Jams
 
-_Sin jams todavía._
+- [RANARIA 2026-11-16](jam-ranaria.md) — `ranaria` (ARCADE, green, placeholder reutilizado), 3 specs en `specs/game-jam/ranaria/`; determinista, sonido Web Audio
