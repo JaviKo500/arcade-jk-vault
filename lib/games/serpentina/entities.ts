@@ -1,11 +1,11 @@
 import {
   CELL,
-  COLORS,
   COLS,
   FRUIT_SPRITES,
   H,
   INITIAL_LENGTH,
   ROWS,
+  type SerpentinaPalette,
   W,
 } from "./constants";
 
@@ -80,10 +80,13 @@ export function spawnFruit(snake: Cell[], random: () => number): Fruit | null {
   };
 }
 
-export function drawGrid(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = COLORS.background;
+export function drawGrid(
+  ctx: CanvasRenderingContext2D,
+  colors: SerpentinaPalette,
+): void {
+  ctx.fillStyle = colors.background;
   ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = COLORS.grid;
+  ctx.strokeStyle = colors.grid;
   ctx.lineWidth = 1;
   ctx.beginPath();
   for (let c = 1; c < COLS; c++) {
@@ -109,13 +112,14 @@ const HEAD_GLOW = 14;
 export function drawSnake(
   ctx: CanvasRenderingContext2D,
   snake: Cell[],
+  colors: SerpentinaPalette,
   color?: string,
 ): void {
   if (snake.length === 0) return;
   const size = CELL - SNAKE_INSET * 2;
   const colorAt = (i: number) =>
     color ??
-    mixHex(COLORS.bodyFrom, COLORS.bodyTo, i / Math.max(snake.length - 1, 1));
+    mixHex(colors.bodyFrom, colors.bodyTo, i / Math.max(snake.length - 1, 1));
 
   ctx.save();
   // Cuerpo, de la cola hacia la cabeza
@@ -142,12 +146,12 @@ export function drawSnake(
 
   // Cabeza, algo más ancha y con brillo
   const head = snake[0];
-  const headColor = color ?? COLORS.head;
+  const headColor = color ?? colors.head;
   const hx = head.col * CELL + HEAD_INSET;
   const hy = head.row * CELL + HEAD_INSET;
   const hs = CELL - HEAD_INSET * 2;
   ctx.shadowColor = headColor;
-  ctx.shadowBlur = HEAD_GLOW;
+  ctx.shadowBlur = HEAD_GLOW * colors.glow;
   ctx.fillStyle = headColor;
   ctx.beginPath();
   ctx.roundRect(hx, hy, hs, hs, 5);
@@ -162,7 +166,7 @@ export function drawSnake(
   const eye = 3;
   const forward = 3;
   const spread = 4;
-  ctx.fillStyle = COLORS.background;
+  ctx.fillStyle = colors.background;
   for (const side of [-1, 1]) {
     const ex = cx + dx * forward + (dy !== 0 ? side * spread : 0);
     const ey = cy + dy * forward + (dx !== 0 ? side * spread : 0);
@@ -176,15 +180,16 @@ export function drawFruit(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement | null,
   fruit: Fruit,
+  colors: SerpentinaPalette,
 ): void {
   const x = fruit.cell.col * CELL;
   const y = fruit.cell.row * CELL;
   const sprite = FRUIT_SPRITES[fruit.sprite];
   if (!image || !image.complete || image.naturalWidth === 0 || !sprite) {
     ctx.save();
-    ctx.fillStyle = COLORS.fruitFallback;
-    ctx.shadowColor = COLORS.fruitFallback;
-    ctx.shadowBlur = 10;
+    ctx.fillStyle = colors.fruitFallback;
+    ctx.shadowColor = colors.fruitFallback;
+    ctx.shadowBlur = 10 * colors.glow;
     ctx.beginPath();
     ctx.arc(x + CELL / 2, y + CELL / 2, CELL * 0.3, 0, Math.PI * 2);
     ctx.fill();

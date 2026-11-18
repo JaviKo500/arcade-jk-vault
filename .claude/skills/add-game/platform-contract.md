@@ -31,7 +31,11 @@ type GameInstance = {
   end; // fuerza fin de partida y dispara onGameOver con el score actual
   setInputEnabled; // false mientras el modal está abierto
   destroy; // cancela requestAnimationFrame y quita todos los listeners
+  setSkin?; // opcional: cambia la paleta en caliente (ver "Skins")
 };
+
+type SkinId = "classic" | "neon" | "retro";
+type GameEngine = { factory; hasLives?: boolean; skins?: readonly SkinId[] };
 
 type GameFactory = (
   canvas: HTMLCanvasElement,
@@ -53,9 +57,18 @@ type GameFactory = (
 - En el canvas **no** se dibuja score, vidas, nivel ni overlay "GAME OVER": eso lo muestra la plataforma. Solo se dibujan indicadores propios de la mecánica (por ejemplo, el `3x` del power-up de ASTEROIDS).
 - Resolución lógica fija; el CSS escala el canvas.
 
-### Paleta neón de referencia — `lib/games/asteroids/constants.ts` (`COLORS`)
+### Paleta neón de referencia — `lib/games/asteroids/constants.ts` (`SKINS.classic`, alias `COLORS`)
 
 `background #0a0a0f` · cyan `#00f5ff` · magenta `#ff006e` · amarillo `#f5ff00` · verde `#00ff88` · texto `#e6e9ff` · texto tenue `#8a8fb5`. La paleta va en constantes del motor, no se lee de CSS en tiempo de ejecución.
+
+### Skins (opcional, retrocompatible) — referencia: `asteroids`
+
+- `lib/games/types.ts`: `SkinId = "classic" | "neon" | "retro"`, `GameInstance.setSkin?(skin)` y `GameEngine.skins?: readonly SkinId[]`.
+- `lib/games/<id>/constants.ts`: `type <Name>Palette` (un campo por rol pintado + `glow`, multiplicador de todos los `shadowBlur`; `0` = sin glow), `SKINS: Record<SkinId, <Name>Palette>` y `DEFAULT_SKIN = "classic"`. `classic` = paleta original exacta.
+- `engine.ts`: `let colors = SKINS[DEFAULT_SKIN]`; todo el render lee de `colors` (ningún color literal fuera de `SKINS`); `setSkin` solo reasigna `colors` (no reinicia, no toca la puntuación ni dispara callbacks).
+- `lib/games/registry.ts`: `{ factory, skins: ["classic", "neon", "retro"] }`.
+- `GamePlayer` muestra el selector `.skin-picker` (botones CLÁSICO / NEÓN / RETRO) entre el HUD y el CRT solo si el motor declara `skins`. La elección se guarda con `lib/skin-preference.ts` en `localStorage` (`arcade-vault:skin:<gameId>`) y se restaura en `onInstance` al montar el motor; valor ausente o no declarado → `classic`.
+- Cada skin debe pasar contraste WCAG sobre su fondo y sobre `--bg`: ≥ 3:1 elementos de juego, ≥ 4.5:1 texto en canvas. Lo verifica el subagente `skin-designer`.
 
 ## 2. Montaje — `components/game-canvas.tsx` y `components/game-player.tsx`
 

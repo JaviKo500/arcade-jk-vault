@@ -1,5 +1,5 @@
 import {
-  COLORS,
+  type CaidaPalette,
   COLS,
   PIECE_COUNT,
   PIECES,
@@ -94,6 +94,7 @@ export function ghostY(board: Board, piece: Piece): number {
 // `px`/`py` son la esquina superior izquierda de la celda, en píxeles lógicos.
 export function drawBlock(
   ctx: CanvasRenderingContext2D,
+  colors: CaidaPalette,
   px: number,
   py: number,
   colorIndex: number,
@@ -102,10 +103,26 @@ export function drawBlock(
 ): void {
   if (!colorIndex) return;
   ctx.globalAlpha = alpha;
-  ctx.fillStyle = COLORS.pieces[colorIndex];
+  ctx.fillStyle = colors.pieces[colorIndex];
   ctx.fillRect(px + 1, py + 1, size - 2, size - 2);
   // brillo superior
-  ctx.fillStyle = "rgba(255, 255, 255, 0.12)";
-  ctx.fillRect(px + 1, py + 1, size - 2, 4);
+  if (colors.highlightAlpha) {
+    ctx.globalAlpha = alpha * colors.highlightAlpha;
+    ctx.fillStyle = colors.highlight;
+    ctx.fillRect(px + 1, py + 1, size - 2, 4);
+    ctx.globalAlpha = alpha;
+  }
+  // Marca interior: distingue piezas sin depender solo del color
+  const mark = colors.marks[colorIndex];
+  if (mark === "dot") {
+    const d = Math.round(size * 0.27);
+    ctx.fillStyle = colors.mark;
+    ctx.fillRect(px + (size - d) / 2, py + (size - d) / 2, d, d);
+  } else if (mark === "frame") {
+    const inset = Math.round(size * 0.25);
+    ctx.strokeStyle = colors.mark;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px + inset, py + inset, size - 2 * inset, size - 2 * inset);
+  }
   ctx.globalAlpha = 1;
 }

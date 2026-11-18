@@ -6,11 +6,22 @@ import type { Game } from "@/data/games";
 import { GameCanvas } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
 import { GAME_ENGINES } from "@/lib/games/registry";
-import type { GameCallbacks, GameInstance } from "@/lib/games/types";
+import type { GameCallbacks, GameInstance, SkinId } from "@/lib/games/types";
 import { insertScore } from "@/lib/data/scores-client";
 import { normalizePlayerName } from "@/lib/format";
+import {
+  DEFAULT_SKIN,
+  getSkinPreference,
+  setSkinPreference,
+} from "@/lib/skin-preference";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+const SKIN_LABELS: Record<SkinId, string> = {
+  classic: "CLÁSICO",
+  neon: "NEÓN",
+  retro: "RETRO",
+};
 
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
@@ -24,6 +35,9 @@ export function GamePlayer({ game }: { game: Game }) {
   // La simulación y los motores con vidas muestran "Vidas" en el HUD
   const showLives = engine?.hasLives !== false;
   const engineRef = useRef<GameInstance | null>(null);
+  // Solo los motores que declaran `skins` muestran el selector
+  const skins = engine?.skins;
+  const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -92,6 +106,13 @@ export function GamePlayer({ game }: { game: Game }) {
     roundRef.current += 1;
   };
 
+  // Cambiar de skin solo cambia la paleta: ni reinicia ni toca la puntuación
+  const changeSkin = (next: SkinId) => {
+    setSkin(next);
+    engineRef.current?.setSkin?.(next);
+    setSkinPreference(game.id, next);
+  };
+
   const saveScore = async () => {
     if (savingRef.current || saveStatus === "saved") return;
     savingRef.current = true;
@@ -150,6 +171,29 @@ export function GamePlayer({ game }: { game: Game }) {
         </div>
       </div>
 
+      {hasEngine && skins && skins.length > 0 && (
+        <div className="skin-picker" role="radiogroup" aria-label="Skin">
+          <span className="skin-picker-label">SKIN</span>
+          {skins.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={skin === id}
+              className={`skin-option skin-${id}${skin === id ? " active" : ""}`}
+              onClick={(event) => {
+                changeSkin(id);
+                // Sin foco, Espacio sigue disparando en el juego
+                event.currentTarget.blur();
+              }}
+            >
+              <span className="skin-swatch" aria-hidden="true" />
+              {SKIN_LABELS[id]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="crt">
         <div className="crt-screen">
           {engineFactory ? (
@@ -158,6 +202,12 @@ export function GamePlayer({ game }: { game: Game }) {
               callbacks={engineCallbacks}
               onInstance={(instance) => {
                 engineRef.current = instance;
+                // Al montar el motor se restaura la skin guardada (cliente)
+                if (instance && skins) {
+                  const saved = getSkinPreference(game.id, skins);
+                  instance.setSkin?.(saved);
+                  setSkin(saved);
+                }
               }}
             />
           ) : (

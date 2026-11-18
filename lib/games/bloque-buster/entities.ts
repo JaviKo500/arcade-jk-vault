@@ -6,7 +6,7 @@ import {
   BLOCK_W,
   BLOCKS_ORIGIN_X,
   BLOCKS_ORIGIN_Y,
-  COLORS,
+  type BloqueBusterPalette,
   EXPLOSION_DURATION,
 } from "./constants";
 import type { BlockColor, Level } from "./levels";
@@ -46,38 +46,49 @@ export function collideAABB(a: Rect, b: Rect): boolean {
 // Estética "tubo de neón": interior oscuro teñido, contorno luminoso con
 // resplandor y un filo de brillo arriba. Todo con primitivas, sin imágenes.
 
-export function drawPaddle(ctx: CanvasRenderingContext2D, paddle: Rect): void {
+export function drawPaddle(
+  ctx: CanvasRenderingContext2D,
+  paddle: Rect,
+  colors: BloqueBusterPalette,
+): void {
   const { x, y, w, h } = paddle;
   const r = h / 2;
   ctx.save();
-  ctx.shadowColor = COLORS.paddle;
-  ctx.shadowBlur = 18;
-  ctx.fillStyle = COLORS.paddle;
+  ctx.shadowColor = colors.paddle;
+  ctx.shadowBlur = 18 * colors.glow;
+  ctx.fillStyle = colors.paddle;
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
   ctx.fill();
   ctx.restore();
 
   // Línea central incandescente
-  ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = colors.paddleCore;
   ctx.fillRect(x + r, y + h / 2 - 1, w - r * 2, 2);
+  ctx.restore();
 }
 
-export function drawBall(ctx: CanvasRenderingContext2D, ball: Rect): void {
+export function drawBall(
+  ctx: CanvasRenderingContext2D,
+  ball: Rect,
+  colors: BloqueBusterPalette,
+): void {
   const cx = ball.x + ball.w / 2;
   const cy = ball.y + ball.h / 2;
   const r = ball.w / 2;
   ctx.save();
-  ctx.shadowColor = COLORS.paddle;
-  ctx.shadowBlur = 14;
-  ctx.fillStyle = COLORS.ball;
+  ctx.shadowColor = colors.ballGlow;
+  ctx.shadowBlur = 14 * colors.glow;
+  ctx.fillStyle = colors.ball;
   ctx.beginPath();
   ctx.arc(cx, cy, r - 1, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
   // Reflejo
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = colors.highlight;
   ctx.beginPath();
   ctx.arc(cx - r * 0.3, cy - r * 0.3, r * 0.3, 0, Math.PI * 2);
   ctx.fill();
@@ -85,8 +96,12 @@ export function drawBall(ctx: CanvasRenderingContext2D, ball: Rect): void {
 
 // Un bloque roto deja su hueco: un contorno discontinuo casi invisible que
 // mantiene legible el patrón del nivel.
-export function drawBlock(ctx: CanvasRenderingContext2D, block: Block): void {
-  const color = COLORS.blocks[block.color];
+export function drawBlock(
+  ctx: CanvasRenderingContext2D,
+  block: Block,
+  colors: BloqueBusterPalette,
+): void {
+  const color = colors.blocks[block.color];
   const x = block.x + 3;
   const y = block.y + 3;
   const w = block.w - 6;
@@ -104,22 +119,25 @@ export function drawBlock(ctx: CanvasRenderingContext2D, block: Block): void {
   }
 
   // Interior teñido
-  ctx.globalAlpha = 0.22;
+  ctx.globalAlpha = colors.blockFill;
   ctx.fillStyle = color;
   ctx.fillRect(x, y, w, h);
 
   // Tubo luminoso
   ctx.globalAlpha = 1;
   ctx.shadowColor = color;
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = 10 * colors.glow;
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   ctx.restore();
 
   // Filo de brillo superior
-  ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = colors.highlight;
   ctx.fillRect(x + 4, y + 4, w - 8, 1);
+  ctx.restore();
 }
 
 // Direcciones fijas de las esquirlas (unitarias, aplanadas en vertical como el bloque).
@@ -137,8 +155,9 @@ const SHARDS: readonly [number, number][] = [
 export function drawExplosion(
   ctx: CanvasRenderingContext2D,
   explosion: Explosion,
-  color: string,
+  colors: BloqueBusterPalette,
 ): void {
+  const color = colors.blocks[explosion.color];
   const phase = Math.min(
     Math.floor((explosion.elapsed / EXPLOSION_DURATION) * 4),
     3,
@@ -149,13 +168,14 @@ export function drawExplosion(
 
   ctx.save();
   ctx.shadowColor = color;
-  ctx.shadowBlur = 16;
+  ctx.shadowBlur = 16 * colors.glow;
 
   if (phase === 0) {
     // Destello: el bloque se enciende al blanco
     ctx.fillStyle = color;
     ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = colors.highlight;
     ctx.fillRect(x + 6, y + 6, w - 12, h - 12);
     ctx.restore();
     return;
@@ -174,7 +194,7 @@ export function drawExplosion(
   const dist = [0, 14, 26, 36][phase];
   const size = [0, 6, 4, 3][phase];
   ctx.globalAlpha = [1, 1, 0.75, 0.5][phase];
-  ctx.fillStyle = phase === 3 ? "#ffffff" : color;
+  ctx.fillStyle = phase === 3 ? colors.highlight : color;
   for (const [dx, dy] of SHARDS) {
     const sx = cx + dx * (w / 2 + dist);
     const sy = cy + dy * (h / 2 + dist * 0.5);

@@ -7,8 +7,21 @@ import type { GameEngine } from "./types";
 // Juegos con motor real. Si un gameId no está aquí, GamePlayer usa la
 // simulación de puntuación.
 export const GAME_ENGINES: Partial<Record<string, GameEngine>> = {
-  asteroids: { factory: createAsteroidsGame },
-  "bloque-buster": { factory: createBloqueBusterGame },
-  caida: { factory: createCaidaGame, hasLives: false },
-  serpentina: { factory: createSerpentinaGame },
+  asteroids: {
+    factory: createAsteroidsGame,
+    skins: ["classic", "neon", "retro"],
+  },
+  "bloque-buster": {
+    factory: createBloqueBusterGame,
+    skins: ["classic", "neon", "retro"],
+  },
+  caida: {
+    factory: createCaidaGame,
+    hasLives: false,
+    skins: ["classic", "neon", "retro"],
+  },
+  serpentina: {
+    factory: createSerpentinaGame,
+    skins: ["classic", "neon", "retro"],
+  },
 };

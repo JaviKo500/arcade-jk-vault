@@ -629,6 +629,45 @@ a { color: inherit; text-decoration: none; }
 .hud-stat.level .v { color: var(--yellow); text-shadow: 0 0 6px rgba(245,255,0,0.5); }
 .hud-actions { display: flex; gap: 10px; }
 
+/* selector de skin del motor (solo si el motor declara `skins`) */
+.skin-picker {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: -6px 0 18px;
+  padding: 8px 12px;
+  border: 1px dashed var(--line-2);
+  background: var(--bg-2);
+}
+.skin-picker-label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+  color: var(--ink-faint); margin-right: 6px;
+}
+.skin-option {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  font-family: var(--pixel); font-size: 9px; letter-spacing: 0.14em;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--ink-faint);
+  cursor: pointer;
+  transition: color 160ms, border-color 160ms, box-shadow 160ms;
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+.skin-option:hover { color: var(--ink); border-color: var(--ink-dim); }
+.skin-option:focus-visible { outline: 1px solid var(--yellow); outline-offset: 2px; }
+.skin-option.active {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,245,255,0.45), inset 0 0 6px rgba(0,245,255,0.3);
+  text-shadow: 0 0 6px rgba(0,245,255,0.6);
+}
+.skin-swatch {
+  width: 18px; height: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.skin-classic .skin-swatch { background: linear-gradient(90deg, #00f5ff 0 33%, #e6e9ff 33% 66%, #ff006e 66%); }
+.skin-neon .skin-swatch { background: linear-gradient(90deg, #00f5ff 0 33%, #ff2bd6 33% 66%, #f5ff00 66%); box-shadow: 0 0 6px rgba(255,43,214,0.7); }
+.skin-retro .skin-swatch { background: linear-gradient(90deg, #29adff 0 33%, #83769c 33% 66%, #ffa300 66%); }
+
 .crt {
   position: relative;
   border-radius: 28px;

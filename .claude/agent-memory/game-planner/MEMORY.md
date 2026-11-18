@@ -1,0 +1,2 @@
+- [Historial de sugerencias](suggestions-history.md) — rondas por fecha: elegido, spec y alternativas descartadas (2026-11-16: invasores recomendado sin spec + tanda de 20 en el To-Do)
+- [Criterios del catálogo](catalog-criteria.md) — preferir placeholders, sin cambios de contrato, puntuación determinista; huecos restantes

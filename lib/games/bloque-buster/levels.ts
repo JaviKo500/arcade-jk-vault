@@ -1,4 +1,4 @@
-// Los 7 colores de bloque del original; la paleta real está en COLORS.blocks.
+// Los 7 colores de bloque del original; la paleta real está en SKINS[skin].blocks.
 export type BlockColor =
   "gray" | "red" | "yellow" | "cyan" | "magenta" | "hotpink" | "green";
 
