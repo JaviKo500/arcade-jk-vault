@@ -1,7 +1,12 @@
-import type { GameCallbacks, GameFactory, GameInstance } from "../types";
+import type {
+  GameCallbacks,
+  GameFactory,
+  GameInstance,
+  SkinId,
+} from "../types";
 import {
   BALL_SIZE,
-  COLORS,
+  DEFAULT_SKIN,
   EXPLOSION_DURATION,
   H,
   INITIAL_LIVES,
@@ -12,6 +17,7 @@ import {
   PADDLE_W,
   PADDLE_Y,
   POINTS_PER_BLOCK,
+  SKINS,
   SOUNDS,
   type SoundName,
   W,
@@ -98,6 +104,9 @@ export const createBloqueBusterGame: GameFactory = (
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
+
+  // Paleta activa; `setSkin` la cambia sin tocar el estado de la partida.
+  let colors = SKINS[DEFAULT_SKIN];
 
   // ── Estado ──────────────────────────────────────────────────────────────────
   const state: EngineState = createInitialState();
@@ -282,23 +291,29 @@ export const createBloqueBusterGame: GameFactory = (
   // Entre la última fila de bloques (y = 224) y la pala (y = 560)
   function drawStartScreen() {
     const cx = W / 2;
-    text("BLOQUE BUSTER", cx, 330, 28, COLORS.paddle, 16);
+    text("BLOQUE BUSTER", cx, 330, 28, colors.title, 16 * colors.glow);
     // Parpadeo de máquina arcade, salvo con movimiento reducido
     const visible =
       reducedMotion || Math.floor(performance.now() / 500) % 2 === 0;
     if (visible)
-      text("PULSA ESPACIO PARA EMPEZAR", cx, 390, 14, COLORS.text, 8);
+      text(
+        "PULSA ESPACIO PARA EMPEZAR",
+        cx,
+        390,
+        14,
+        colors.text,
+        8 * colors.glow,
+      );
   }
 
   function draw() {
-    ctx.fillStyle = COLORS.background;
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, W, H);
 
-    for (const block of state.blocks) drawBlock(ctx, block);
-    for (const exp of state.explosions)
-      drawExplosion(ctx, exp, COLORS.blocks[exp.color]);
-    drawPaddle(ctx, state.paddle);
-    drawBall(ctx, state.ball);
+    for (const block of state.blocks) drawBlock(ctx, block, colors);
+    for (const exp of state.explosions) drawExplosion(ctx, exp, colors);
+    drawPaddle(ctx, state.paddle, colors);
+    drawBall(ctx, state.ball, colors);
 
     if (state.phase === "ready") drawStartScreen();
   }
@@ -445,5 +460,19 @@ export const createBloqueBusterGame: GameFactory = (
     document.removeEventListener("visibilitychange", onVisibilityChange);
   }
 
-  return { start, pause, resume, restart, end, setInputEnabled, destroy };
+  function setSkin(skin: SkinId) {
+    // Solo cambia la paleta: el siguiente frame ya se dibuja con ella.
+    colors = SKINS[skin] ?? SKINS[DEFAULT_SKIN];
+  }
+
+  return {
+    start,
+    pause,
+    resume,
+    restart,
+    end,
+    setInputEnabled,
+    destroy,
+    setSkin,
+  };
 };

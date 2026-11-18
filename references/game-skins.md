@@ -11,9 +11,9 @@ Leyenda: ✅ implementada y verificada · ⚠️ implementada con fallos de cont
 | ID              | Título        | CLÁSICO | NEÓN | RETRO | Modo oscuro            | Última revisión |
 | --------------- | ------------- | ------- | ---- | ----- | ---------------------- | --------------- |
 | `asteroids`     | ASTEROIDS     | ✅      | ✅   | ✅    | OK · peor 4.74 (retro) | 2026-11-17      |
-| `bloque-buster` | BLOQUE BUSTER | ❌      | ❌   | ❌    | Sin verificar          | —               |
+| `bloque-buster` | BLOQUE BUSTER | ✅      | ✅   | ✅    | OK · peor 3.91 (clásico) | 2026-11-17      |
 | `caida`         | CAÍDA         | ❌      | ❌   | ❌    | Sin verificar          | —               |
-| `serpentina`    | SERPENTINA    | ❌      | ❌   | ❌    | Sin verificar          | —               |
+| `serpentina`    | SERPENTINA    | ✅      | ✅   | ✅    | OK · peor 4.58 (retro) | 2026-11-17      |
 
 ## Notas (2026-11-16)
 
@@ -29,3 +29,15 @@ Leyenda: ✅ implementada y verificada · ⚠️ implementada con fallos de cont
 - `components/game-player.tsx`: selector CLÁSICO / NEÓN / RETRO (`.skin-picker`) entre el HUD y el CRT, solo si el motor declara `skins`.
 - Persistencia: `lib/skin-preference.ts` (`getSkinPreference` / `setSkinPreference`), clave `arcade-vault:skin:<gameId>`, restaurada al montar el motor.
 - ASTEROIDS — peor ratio por skin: CLÁSICO 5.15 · NEÓN 6.18 · RETRO 4.74 (umbral ≥ 3:1 elementos, ≥ 4.5:1 texto).
+
+## Notas (2026-11-17) — SERPENTINA
+
+- Reutiliza el contrato de `asteroids` sin cambios: `SerpentinaPalette` + `SKINS` en `lib/games/serpentina/constants.ts`, `setSkin` en el motor y `skins` en el registro.
+- Peor ratio por skin (vs fondo de la skin): CLÁSICO 5.15 (destello/fruta de respaldo `#ff006e`) · NEÓN 6.41 (cola `#ff2bd6`) · RETRO 4.58 (cola `#008751`; 4.31 vs `--bg`).
+- Las frutas son sprites de `fruits.png` y no se recolorean en ninguna skin.
+
+## Notas (2026-11-17) — BLOQUE BUSTER
+
+- Reutiliza el contrato de `asteroids` sin cambios: `BloqueBusterPalette` + `SKINS` en `lib/games/bloque-buster/constants.ts` (añade `blockFill`, opacidad del interior de los bloques: 1 = macizo en RETRO), `setSkin` en el motor y `skins` en el registro.
+- Peor ratio por skin: CLÁSICO 3.91 (bloque violeta `#aa00ff`, paleta original sin cambios) · NEÓN 5.50 (bloque `#c64bff` vs `--bg`) · RETRO 4.74 (bloque lavanda `#83769c` vs `--bg`).
+- Los 7 colores de bloque se distinguen por tono; algunos pares tienen luminancia casi igual (p. ej. cian/verde en CLÁSICO y NEÓN, verde/gris en RETRO).

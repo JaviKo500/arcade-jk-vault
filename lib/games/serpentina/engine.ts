@@ -1,9 +1,14 @@
-import type { GameCallbacks, GameFactory, GameInstance } from "../types";
+import type {
+  GameCallbacks,
+  GameFactory,
+  GameInstance,
+  SkinId,
+} from "../types";
 import {
   BASE_STEPS_PER_SECOND,
   CELL,
-  COLORS,
   DEAD_DURATION,
+  DEFAULT_SKIN,
   FRUITS_PER_LEVEL,
   FRUITS_SRC,
   INITIAL_LIVES,
@@ -11,6 +16,7 @@ import {
   MAX_SCORE,
   MAX_STEPS_PER_SECOND,
   POINTS_PER_FRUIT,
+  SKINS,
   W,
 } from "./constants";
 import {
@@ -85,6 +91,8 @@ export const createSerpentinaGame: GameFactory = (
 
   // ── Estado ──────────────────────────────────────────────────────────────────
   const state: EngineState = createInitialState();
+  // Paleta activa; `setSkin` la cambia sin tocar el estado de la partida.
+  let colors = SKINS[DEFAULT_SKIN];
 
   // Último valor notificado a la plataforma: los callbacks solo se llaman
   // cuando el valor cambia, nunca en cada frame.
@@ -247,9 +255,9 @@ export const createSerpentinaGame: GameFactory = (
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = color;
-    if (glow) {
+    if (glow && colors.glow) {
       ctx.shadowColor = color;
-      ctx.shadowBlur = glow;
+      ctx.shadowBlur = glow * colors.glow;
     }
     ctx.fillText(value, x, y);
     ctx.restore();
@@ -263,11 +271,11 @@ export const createSerpentinaGame: GameFactory = (
   // La serpiente ocupa la fila 15 (y = 300–320): el texto va por encima y por debajo
   function drawStartScreen() {
     const cx = W / 2;
-    text("SERPENTINA", cx, 210, 32, COLORS.head, 18);
-    if (!state.imageReady) text("CARGANDO…", cx, 400, 14, COLORS.textDim);
+    text("SERPENTINA", cx, 210, 32, colors.head, 18);
+    if (!state.imageReady) text("CARGANDO…", cx, 400, 14, colors.textDim);
     else if (blinkOn(500))
-      text("PULSA ESPACIO PARA EMPEZAR", cx, 400, 14, COLORS.text, 8);
-    text("FLECHAS O WASD PARA GIRAR", cx, 444, 10, COLORS.textDim);
+      text("PULSA ESPACIO PARA EMPEZAR", cx, 400, 14, colors.text, 8);
+    text("FLECHAS O WASD PARA GIRAR", cx, 444, 10, colors.textDim);
   }
 
   // Flechas en las celdas a las que se puede salir (todas menos la izquierda)
@@ -283,7 +291,7 @@ export const createSerpentinaGame: GameFactory = (
     ];
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = COLORS.head;
+    ctx.fillStyle = colors.head;
     for (const [, dx, dy] of hints) {
       const cx = (head.col + dx) * CELL + CELL / 2;
       const cy = (head.row + dy) * CELL + CELL / 2;
@@ -298,18 +306,18 @@ export const createSerpentinaGame: GameFactory = (
       ctx.fill();
     }
     ctx.restore();
-    text("PULSA UNA DIRECCIÓN", W / 2, 400, 12, COLORS.text, 6);
+    text("PULSA UNA DIRECCIÓN", W / 2, 400, 12, colors.text, 6);
   }
 
   function draw() {
-    drawGrid(ctx);
-    drawFruit(ctx, fruitsImage, state.fruit);
+    drawGrid(ctx, colors);
+    drawFruit(ctx, fruitsImage, state.fruit, colors);
 
     // Tras un choque, la serpiente alterna entre magenta y sus colores
     const flash =
       state.phase === "dead" &&
       (reducedMotion || Math.floor(state.deadTimer * 10) % 2 === 0);
-    drawSnake(ctx, state.snake, flash ? COLORS.dead : undefined);
+    drawSnake(ctx, state.snake, colors, flash ? colors.dead : undefined);
 
     if (state.phase === "ready") drawStartScreen();
     else if (state.phase === "waiting") drawWaitingHint();
@@ -471,5 +479,19 @@ export const createSerpentinaGame: GameFactory = (
     fruitsImage.removeEventListener("error", onImageSettled);
   }
 
-  return { start, pause, resume, restart, end, setInputEnabled, destroy };
+  // Solo cambia la paleta: no reinicia, no toca la puntuación ni dispara callbacks.
+  function setSkin(skin: SkinId) {
+    colors = SKINS[skin] ?? SKINS[DEFAULT_SKIN];
+  }
+
+  return {
+    start,
+    pause,
+    resume,
+    restart,
+    end,
+    setInputEnabled,
+    destroy,
+    setSkin,
+  };
 };

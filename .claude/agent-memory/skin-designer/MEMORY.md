@@ -17,4 +17,6 @@
 ## Auditorías
 
 - [asteroids](asteroids.md) — 2026-11-17 · 0→3 skins (classic/neon/retro), primer juego, define el contrato; sin fallos de contraste.
-- Pendientes: `bloque-buster`, `caida`, `serpentina` (sin skins).
+- [serpentina](serpentina.md) — 2026-11-17 · 0→3 skins con el contrato de asteroids; peor 4.58 (retro); sin fallos.
+- [bloque-buster](bloque-buster.md) — 2026-11-17 · 0→3 skins, reutiliza el contrato; peor 3.91 (classic, sin cambios).
+- Pendientes: `caida` (sin skins).
