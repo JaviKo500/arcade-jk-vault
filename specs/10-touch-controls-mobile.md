@@ -1,6 +1,6 @@
 # SPEC 10 — Controles táctiles y juego en móvil
 
-> **Estado:** Approved · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 07 (`07-caida-game.md` — registro `GameEngine`), SPEC 08 (`08-bloque-buster-game.md`), SPEC 09 (`09-serpentina-game.md`) · **Fecha:** 2026-11-17
+> **Estado:** Implemented · **Depende de:** SPEC 05 (`05-asteroids-game.md` — contrato `GameFactory`, `GameCanvas`, `GamePlayer`), SPEC 07 (`07-caida-game.md` — registro `GameEngine`), SPEC 08 (`08-bloque-buster-game.md`), SPEC 09 (`09-serpentina-game.md`) · **Fecha:** 2026-11-17
 > **Objetivo:** Que los 4 juegos implementados se puedan jugar en una pantalla táctil con un mando virtual común (cruceta y botones A/B) bajo el canvas, en vertical y en horizontal, con pantalla completa y sin zoom accidental.
 
 ## Scope
@@ -22,15 +22,16 @@
 - **Detección táctil** con `matchMedia("(pointer: coarse)")`. El mando solo aparece si coincide. En escritorio el player queda exactamente como ahora.
 - **Texto de inicio en táctil:** los 4 motores dibujan "PULSA A PARA EMPEZAR" en lugar de "PULSA ESPACIO PARA EMPEZAR" (o "PULSA A" en `caida`).
 - **Layout del player en táctil:**
-  - En vertical: nav, HUD compacto, el canvas a todo el ancho y el mando debajo.
+  - La nav y el footer no se muestran mientras se ve el mando, en vertical y en horizontal.
+  - En vertical: HUD compacto, el canvas a todo el ancho y el mando debajo, con unos 26 px de separación entre el canvas y la cruceta.
   - En horizontal: HUD en una franja mínima arriba, la cruceta a la izquierda, el canvas en el centro ajustado a la altura disponible y A/B a la derecha.
   - El marco CRT decorativo y la franja "SEÑAL OK…" se ocultan en táctil.
-  - El HUD conserva Jugador, Puntuación, Vidas, Nivel, Skin y los botones PAUSA, FIN y SALIR.
+  - El HUD conserva Jugador, Puntuación, Vidas, Nivel, Skin y los botones PAUSA, FIN y SALIR, y añade **REGRESAR** junto a PAUSA, solo en táctil. REGRESAR vuelve a la página anterior (`router.back()`) y, si no hay historial, va a la ficha del juego como SALIR. Sustituye a la nav como forma de salir del player.
 - **Pantalla completa:**
-  - Botón "PANTALLA COMPLETA" en el HUD, solo en táctil.
-  - Llama a `requestFullscreen()` sobre el contenedor del player si el navegador lo soporta.
-  - Si no lo soporta (iPhone Safari), activa un modo inmersivo con CSS que oculta nav y footer.
-  - El mismo botón sale de la pantalla completa o del modo inmersivo.
+  - Botón "PANTALLA COMPLETA" en el HUD, solo en táctil y solo si el navegador soporta la Fullscreen API.
+  - Llama a `requestFullscreen()` sobre el contenedor del player (o `webkitRequestFullscreen()` en iPad).
+  - Sin Fullscreen API (iPhone Safari) el botón no aparece: nav y footer ya están ocultos en táctil.
+  - El mismo botón sale de la pantalla completa.
 - **Bloqueo de zoom y gestos** en el área de juego (canvas y mando):
   - `touch-action: none`, `user-select: none`, `-webkit-touch-callout: none` y sin resaltado al tocar.
   - El doble toque y el pellizco no hacen zoom ni scroll mientras se juega.
@@ -109,9 +110,10 @@ const REPEAT_INTERVAL_MS = 60; // y repite cada 60 ms (keydown con repeat: true)
 ### Hooks nuevos
 
 - `hooks/use-coarse-pointer.ts` → `useCoarsePointer(): boolean`. Usa `useSyncExternalStore` sobre `matchMedia("(pointer: coarse)")` y vale `false` en el servidor.
-- `hooks/use-fullscreen.ts` → `useFullscreen(target)` y devuelve `{ active: boolean; mode: "native" | "immersive"; toggle: () => void }`.
-  - `native`: Fullscreen API sobre `target`.
-  - `immersive`: añade la clase `av-immersive` a `<html>`, que oculta nav y footer. Se quita al salir o al desmontar el player.
+- `hooks/use-fullscreen.ts` → `useFullscreen(target)` y devuelve `{ active: boolean; supported: boolean; toggle: () => void }`.
+  - Fullscreen API sobre `target` (con prefijo `webkit` en iPad). `supported` es `false` en el servidor y en navegadores sin la API.
+  - Al desmontar el player se sale de la pantalla completa.
+- Nav y footer se ocultan con CSS mientras exista `.av-player.is-touch` (`html:has(.av-player.is-touch)`), sin JS.
 
 ### Configuración
 
@@ -137,7 +139,8 @@ En `next.config.ts`, `allowedDevOrigins` es `DEV_ALLOWED_ORIGINS` partida por co
 7. **Integración en `GamePlayer` en vertical.** Si `useCoarsePointer()` es `true` y el motor declara `touch`, se renderiza `TouchControls` bajo el canvas, con `disabled` mientras el modal está abierto. En táctil se ocultan el marco CRT y la franja "SEÑAL OK" y el HUD pasa a una versión compacta. Las clases nuevas van en `app/globals.css`. Prueba manual: `serpentina` jugable de principio a fin en emulación móvil vertical.
 8. **Bloqueo de gestos.** `touch-action: none`, `user-select: none`, `-webkit-touch-callout: none` y `-webkit-tap-highlight-color: transparent` en el canvas y el mando. Prueba manual: el doble toque y el pellizco sobre el área de juego no hacen zoom.
 9. **Layout en horizontal.** Con `@media (orientation: landscape)` dentro del modo táctil: cruceta a la izquierda, canvas centrado ajustado a la altura disponible, A/B a la derecha y el HUD en una franja mínima arriba. Prueba manual: los 4 juegos en emulación horizontal sin scroll.
-10. **Pantalla completa.** Hook `useFullscreen` (`hooks/use-fullscreen.ts`) con los modos `native` e `immersive`, la clase `av-immersive` en `globals.css` (oculta `.av-nav` y el footer) y el botón "PANTALLA COMPLETA" / "SALIR DE PANTALLA COMPLETA" en el HUD, solo en táctil. Al desmontar el player se sale de cualquiera de los dos modos.
+10. **Pantalla completa.** Hook `useFullscreen` (`hooks/use-fullscreen.ts`) sobre la Fullscreen API y el botón "PANTALLA COMPLETA" / "SALIR DE PANTALLA COMPLETA" en el HUD, solo en táctil y si hay soporte. Al desmontar el player se sale de la pantalla completa.
+    - _Revisión tras el paso 10:_ nav y footer se ocultan siempre en el player táctil (`html:has(.av-player.is-touch)`), así que se retira el modo inmersivo (`av-immersive`). Se añade el botón REGRESAR junto a PAUSA y 26 px entre canvas y mando en vertical.
 11. **Verificación y cierre.**
     - Verificación visual con Playwright (emulación de móvil en vertical y horizontal), con capturas en `.playwright-screenshots/`.
     - `npm run lint` y `npm run build`.
@@ -148,41 +151,42 @@ En `next.config.ts`, `allowedDevOrigins` es `DEV_ALLOWED_ORIGINS` partida por co
 
 **Mando y entrada**
 
-- [ ] En un dispositivo con `pointer: coarse`, `/games/<id>/play` muestra el mando virtual (cruceta + A/B) en los 4 juegos: `asteroids`, `caida`, `bloque-buster` y `serpentina`.
-- [ ] En escritorio (`pointer: fine`) el player se ve y funciona exactamente igual que antes de esta spec: sin mando, con marco CRT y con el texto "PULSA ESPACIO".
-- [ ] En táctil, el canvas de los 4 juegos muestra "PULSA A PARA EMPEZAR" ("PULSA A" en `caida`), y pulsar `A` arranca la partida.
-- [ ] Cada botón del mando produce en cada juego la acción de la tabla del modelo de datos. Por ejemplo, `B` rota la pieza en `caida` y `A` dispara en `asteroids`.
-- [ ] Los botones sin binding se ven apagados y pulsarlos no tiene ningún efecto.
-- [ ] Mantener pulsada ← en `caida` mueve la pieza varias columnas seguidas.
-- [ ] Mantener ↑ en `asteroids` propulsa la nave de forma continua, y soltar para la propulsión.
-- [ ] Arrastrar el dedo fuera de un botón pulsado suelta la tecla: la nave deja de girar y la pala deja de moverse.
-- [ ] Con el modal "FIN DEL JUEGO" abierto, el mando no envía nada y el input de iniciales acepta el teclado del sistema con normalidad.
-- [ ] PAUSA, FIN y SALIR del HUD funcionan en táctil igual que en escritorio.
+- [x] En un dispositivo con `pointer: coarse`, `/games/<id>/play` muestra el mando virtual (cruceta + A/B) en los 4 juegos: `asteroids`, `caida`, `bloque-buster` y `serpentina`.
+- [x] En escritorio (`pointer: fine`) el player se ve y funciona exactamente igual que antes de esta spec: sin mando, con marco CRT y con el texto "PULSA ESPACIO".
+- [x] En táctil, el canvas de los 4 juegos muestra "PULSA A PARA EMPEZAR" ("PULSA A" en `caida`), y pulsar `A` arranca la partida.
+- [x] Cada botón del mando produce en cada juego la acción de la tabla del modelo de datos. Por ejemplo, `B` rota la pieza en `caida` y `A` dispara en `asteroids`.
+- [x] Los botones sin binding se ven apagados y pulsarlos no tiene ningún efecto.
+- [x] Mantener pulsada ← en `caida` mueve la pieza varias columnas seguidas.
+- [x] Mantener ↑ en `asteroids` propulsa la nave de forma continua, y soltar para la propulsión.
+- [x] Arrastrar el dedo fuera de un botón pulsado suelta la tecla: la nave deja de girar y la pala deja de moverse.
+- [x] Con el modal "FIN DEL JUEGO" abierto, el mando no envía nada y el input de iniciales acepta el teclado del sistema con normalidad.
+- [x] PAUSA, FIN y SALIR del HUD funcionan en táctil igual que en escritorio.
+- [x] En táctil, REGRESAR aparece junto a PAUSA y vuelve a la página anterior (o a la ficha del juego si se entró directo al player). En escritorio no aparece.
 
 **Layout y gestos**
 
-- [ ] En vertical (p. ej. 412×915), nav, HUD compacto, canvas y mando caben sin scroll horizontal, y el mando queda bajo el canvas.
-- [ ] En horizontal (p. ej. 915×412), la cruceta queda a la izquierda del canvas, A/B a la derecha y el conjunto no necesita scroll vertical para jugar.
-- [ ] En táctil no se muestran el marco CRT decorativo ni la franja "SEÑAL OK".
-- [ ] Un doble toque o un pellizco sobre el canvas o el mando no cambia el zoom de la página.
-- [ ] Mantener pulsado un botón del mando no abre el menú contextual ni selecciona texto.
+- [x] En táctil, la nav y el footer no se ven en el player, ni en vertical ni en horizontal. En escritorio y en el resto de páginas se ven como siempre.
+- [x] En vertical (p. ej. 412×915), HUD compacto, canvas y mando caben sin scroll horizontal, y el mando queda bajo el canvas con unos 26 px de separación.
+- [x] En horizontal (p. ej. 915×412), la cruceta queda a la izquierda del canvas, A/B a la derecha y el conjunto no necesita scroll vertical para jugar.
+- [x] En táctil no se muestran el marco CRT decorativo ni la franja "SEÑAL OK".
+- [x] Un doble toque o un pellizco sobre el canvas o el mando no cambia el zoom de la página.
+- [x] Mantener pulsado un botón del mando no abre el menú contextual ni selecciona texto.
 
 **Pantalla completa**
 
-- [ ] En táctil, el HUD muestra el botón "PANTALLA COMPLETA". En escritorio no aparece.
-- [ ] En Chrome Android, pulsarlo pone el player en pantalla completa nativa, y pulsar de nuevo ("SALIR DE PANTALLA COMPLETA") la quita.
-- [ ] En un navegador sin Fullscreen API, pulsarlo oculta nav y footer (clase `av-immersive` en `<html>`), y pulsar de nuevo los muestra.
-- [ ] Salir del player (SALIR o navegar a otra ruta) deja la página fuera de pantalla completa y sin `av-immersive`.
+- [x] En táctil con Fullscreen API, el HUD muestra el botón "PANTALLA COMPLETA". En escritorio y en navegadores sin la API (iPhone Safari) no aparece.
+- [x] En Chrome Android, pulsarlo pone el player en pantalla completa nativa, y pulsar de nuevo ("SALIR DE PANTALLA COMPLETA") la quita.
+- [x] Salir del player (SALIR, REGRESAR o navegar a otra ruta) deja la página fuera de pantalla completa y con la nav visible.
 
 **Configuración y calidad**
 
-- [ ] Con `DEV_ALLOWED_ORIGINS=192.168.x.y` en `.env.local`, `next dev` sirve la app desde esa IP sin bloquear los recursos de dev.
-- [ ] Sin la variable, `next.config.ts` no falla y `allowedDevOrigins` es `[]`.
-- [ ] `next.config.ts` ya no contiene ninguna IP fija.
-- [ ] `.env.local.example` documenta `DEV_ALLOWED_ORIGINS`.
-- [ ] `.claude/skills/add-game/platform-contract.md` documenta `GameOptions` y `GameEngine.touch`.
-- [ ] `npm run lint` y `npm run build` terminan sin errores.
-- [ ] Hay capturas de Playwright en vertical y horizontal en `.playwright-screenshots/`.
+- [x] Con `DEV_ALLOWED_ORIGINS=192.168.x.y` en `.env.local`, `next dev` sirve la app desde esa IP sin bloquear los recursos de dev.
+- [x] Sin la variable, `next.config.ts` no falla y `allowedDevOrigins` es `[]`.
+- [x] `next.config.ts` ya no contiene ninguna IP fija.
+- [x] `.env.local.example` documenta `DEV_ALLOWED_ORIGINS`.
+- [x] `.claude/skills/add-game/platform-contract.md` documenta `GameOptions` y `GameEngine.touch`.
+- [x] `npm run lint` y `npm run build` terminan sin errores.
+- [x] Hay capturas de Playwright en vertical y horizontal en `.playwright-screenshots/`.
 
 ## Decisions
 
@@ -199,7 +203,10 @@ En `next.config.ts`, `allowedDevOrigins` es `DEV_ALLOWED_ORIGINS` partida por co
 - **No:** dejar el texto "PULSA ESPACIO" en táctil. Espacio no existe en un móvil.
 - **Sí:** recrear el motor si `touch` cambia al hidratar (efecto con `[factory, touch]`). Solo ocurre en la pantalla de inicio, antes de jugar, así que no se pierde partida.
 - **Sí:** repetición de la cruceta con 180 ms de retardo y 60 ms de intervalo. Imita la repetición del teclado del sistema, que `caida` necesita para mover la pieza varias columnas.
-- **Sí:** pantalla completa con un botón y un modo inmersivo como alternativa. iPhone Safari no soporta la Fullscreen API en elementos, y ocultar nav y footer da la mayor parte del beneficio.
+- **Sí:** ocultar nav y footer siempre en el player táctil (revisión tras el paso 10). En móvil la nav se come altura que necesita el canvas, sobre todo en horizontal. Para salir quedan REGRESAR y SALIR en el HUD.
+- **Sí:** botón REGRESAR (`router.back()`) junto a PAUSA, solo en táctil. Sin nav hace falta una forma evidente de volver a donde se estaba. SALIR sigue llevando a la ficha del juego.
+- **Sí:** pantalla completa nativa con un botón, solo donde hay Fullscreen API.
+- **No:** modo inmersivo (`av-immersive`) como alternativa. Se descartó al ocultar la nav siempre en táctil: ya no aportaba nada.
 - **No:** pantalla completa automática al pulsar `A`. Es intrusivo y el navegador puede rechazarlo.
 - **Sí:** bloquear zoom y gestos solo en el área de juego (`touch-action: none`).
 - **No:** `user-scalable=no` en el viewport global. Rompe la accesibilidad del resto del sitio.
@@ -215,7 +222,7 @@ En `next.config.ts`, `allowedDevOrigins` es `DEV_ALLOWED_ORIGINS` partida por co
 | Teclas "pegadas" si el dedo sale de la pantalla, llega una llamada o se oculta la pestaña        | `pointercancel`/`pointerleave` sueltan la tecla. Al desmontar o desactivar el mando se envía `keyup` de todas. Los motores ya pausan con `visibilitychange`. |
 | Los dispositivos híbridos (portátil táctil con ratón) informan `pointer: fine` y no ven el mando | Se acepta: tienen teclado. El botón manual queda fuera de alcance.                                                                                           |
 | Multitáctil: cruceta y A pulsados a la vez (girar y disparar en `asteroids`)                     | Pointer Events con un `pointerId` por botón, así que cada dedo se gestiona por separado. Se comprueba en un dispositivo real.                                |
-| En horizontal, con poca altura, la barra del navegador reduce el canvas                          | Pantalla completa o modo inmersivo. Se usa `dvh` para la altura disponible.                                                                                  |
+| En horizontal, con poca altura, la barra del navegador reduce el canvas                          | La nav y el footer se ocultan en el player táctil, y hay pantalla completa donde existe la API. Se usa `dvh` para la altura disponible.                      |
 | `allowedDevOrigins` mal escrito en `.env.local` bloquea el acceso desde el móvil                 | Se filtran espacios y entradas vacías, y la variable se documenta con un ejemplo. Solo afecta a `next dev`.                                                  |
 
 ## What is **not** in this spec
