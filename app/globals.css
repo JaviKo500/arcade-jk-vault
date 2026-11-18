@@ -1608,6 +1608,62 @@ a { color: inherit; text-decoration: none; }
   .tc-face { column-gap: 12px; }
 }
 
+/* táctil en horizontal: franja HUD arriba y cruceta | canvas | A/B debajo,
+   todo dentro del alto que deja la nav (`--av-nav-h`, medido en GamePlayer) */
+@media (orientation: landscape) {
+  .av-player.is-touch {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 6px 8px;
+    max-width: none;
+    height: calc(100dvh - var(--av-nav-h, 0px));
+    margin: 0;
+    padding: 6px 12px 8px;
+  }
+  .is-touch .player-hud {
+    grid-column: 1; grid-row: 1;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 0;
+    padding: 4px 8px;
+  }
+  .is-touch .hud-stats { flex-wrap: nowrap; gap: 14px; }
+  .is-touch .hud-stat .l { font-size: 7px; }
+  .is-touch .hud-stat .v { font-size: 10px; white-space: nowrap; }
+  .is-touch .hud-actions { flex-wrap: nowrap; }
+  .is-touch .hud-actions .btn { padding: 6px 8px; font-size: 7px; }
+  .is-touch .skin-picker {
+    grid-column: 2; grid-row: 1;
+    flex-wrap: nowrap;
+    margin: 0;
+    padding: 4px 6px;
+  }
+  .is-touch .skin-picker-label { display: none; }
+  .is-touch .skin-option { padding: 6px; font-size: 7px; }
+
+  .is-touch .play-area {
+    grid-column: 1 / -1; grid-row: 2;
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 0;
+  }
+  /* el mando se reparte a ambos lados del canvas */
+  .is-touch .touch-controls { display: contents; }
+  .is-touch .touch-controls.disabled > * { opacity: 0.35; }
+  .is-touch .tc-dpad { order: 1; }
+  .is-touch .crt { order: 2; flex: 0 0 auto; }
+  .is-touch .tc-face { order: 3; padding-right: 4px; }
+  /* canvas 4:3 tan alto como permita el hueco, sin pisar el mando (≈ 340 px) */
+  .is-touch .crt-screen {
+    width: min(calc(100cqh * 4 / 3), calc(100cqw - 340px));
+    height: auto;
+  }
+}
+
 /* ===== Save score states ===== */
 .btn:disabled { opacity: 0.6; cursor: not-allowed; animation: none; }
 .modal .input-row input:disabled { color: var(--ink-dim); }

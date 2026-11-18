@@ -61,6 +61,20 @@ export function GamePlayer({ game }: { game: Game }) {
   const name = nameOverride ?? session?.name ?? "INVITADO";
   const level = hasEngine ? engineLevel : Math.floor(score / 2500) + 1;
 
+  // En táctil horizontal el canvas se ajusta a la altura que deja la nav
+  // (sticky y de alto variable): se publica como `--av-nav-h` en el player.
+  const playerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const player = playerRef.current;
+    const nav = document.querySelector<HTMLElement>(".av-nav");
+    if (!touchMode || !player || !nav) return;
+    const observer = new ResizeObserver(() => {
+      player.style.setProperty("--av-nav-h", `${nav.offsetHeight}px`);
+    });
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [touchMode]);
+
   useEffect(() => {
     if (hasEngine || over || paused) return;
     const timer = setInterval(() => {
@@ -138,7 +152,10 @@ export function GamePlayer({ game }: { game: Game }) {
   };
 
   return (
-    <div className={`av-player fade-in${touchMode ? " is-touch" : ""}`}>
+    <div
+      ref={playerRef}
+      className={`av-player fade-in${touchMode ? " is-touch" : ""}`}
+    >
       <div className="player-hud">
         <div className="hud-stats">
           <div className="hud-stat">
@@ -201,66 +218,69 @@ export function GamePlayer({ game }: { game: Game }) {
         </div>
       )}
 
-      <div className="crt">
-        <div className="crt-screen">
-          {engineFactory ? (
-            <GameCanvas
-              factory={engineFactory}
-              callbacks={engineCallbacks}
-              touch={touchMode}
-              onInstance={(instance) => {
-                engineRef.current = instance;
-                // Al montar el motor se restaura la skin guardada (cliente)
-                if (instance && skins) {
-                  const saved = getSkinPreference(game.id, skins);
-                  instance.setSkin?.(saved);
-                  setSkin(saved);
-                }
-              }}
-            />
-          ) : (
-            <div className="game-arena">
-              <div className="grid-floor" />
-              <div className="enemy e1" />
-              <div className="enemy e2" />
-              <div className="enemy e3" />
-              <div className="player-ship" />
-            </div>
-          )}
-          {paused && (
-            <div
-              className="crt-content"
-              style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
-            >
-              <div>
-                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
-                  EN PAUSA
-                </div>
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    color: "var(--ink-dim)",
-                    marginTop: 10,
-                    letterSpacing: "0.16em",
-                  }}
-                >
-                  PULSA REANUDAR PARA CONTINUAR
+      {/* En táctil horizontal: cruceta | canvas | A/B */}
+      <div className="play-area">
+        <div className="crt">
+          <div className="crt-screen">
+            {engineFactory ? (
+              <GameCanvas
+                factory={engineFactory}
+                callbacks={engineCallbacks}
+                touch={touchMode}
+                onInstance={(instance) => {
+                  engineRef.current = instance;
+                  // Al montar el motor se restaura la skin guardada (cliente)
+                  if (instance && skins) {
+                    const saved = getSkinPreference(game.id, skins);
+                    instance.setSkin?.(saved);
+                    setSkin(saved);
+                  }
+                }}
+              />
+            ) : (
+              <div className="game-arena">
+                <div className="grid-floor" />
+                <div className="enemy e1" />
+                <div className="enemy e2" />
+                <div className="enemy e3" />
+                <div className="player-ship" />
+              </div>
+            )}
+            {paused && (
+              <div
+                className="crt-content"
+                style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
+              >
+                <div>
+                  <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+                    EN PAUSA
+                  </div>
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--ink-dim)",
+                      marginTop: 10,
+                      letterSpacing: "0.16em",
+                    }}
+                  >
+                    PULSA REANUDAR PARA CONTINUAR
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          <div className="crt-bottom">
+            <span className="led">SEÑAL OK</span>
+            <span>{game.title} · CRT-83 · 60 HZ</span>
+            <span>CARGA · 1MB</span>
+          </div>
         </div>
-        <div className="crt-bottom">
-          <span className="led">SEÑAL OK</span>
-          <span>{game.title} · CRT-83 · 60 HZ</span>
-          <span>CARGA · 1MB</span>
-        </div>
-      </div>
 
-      {touchMode && touchLayout && (
-        <TouchControls layout={touchLayout} disabled={over} />
-      )}
+        {touchMode && touchLayout && (
+          <TouchControls layout={touchLayout} disabled={over} />
+        )}
+      </div>
 
       {over && (
         <div className="modal-bd">
