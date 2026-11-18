@@ -1,10 +1,11 @@
-import type { GameCallbacks, GameInstance } from "../types";
+import type { GameCallbacks, GameInstance, SkinId } from "../types";
 import {
-  COLORS,
+  DEFAULT_SKIN,
   H,
   POINTS,
   POWERUP_DROP_CHANCE,
   POWERUP_DURATION,
+  SKINS,
   W,
 } from "./constants";
 import {
@@ -60,6 +61,8 @@ export function createAsteroidsGame(
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
   const fontFamily = resolveFontFamily(canvas);
+  // Paleta activa; `setSkin` la cambia sin tocar el estado de la partida.
+  let colors = SKINS[DEFAULT_SKIN];
 
   // ── Input ───────────────────────────────────────────────────────────────────
   const input: InputState = { keys: {} };
@@ -283,9 +286,9 @@ export function createAsteroidsGame(
     ctx.font = `12px ${fontFamily}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = COLORS.powerUpText;
-    ctx.shadowColor = COLORS.powerUpText;
-    ctx.shadowBlur = 6;
+    ctx.fillStyle = colors.powerUpText;
+    ctx.shadowColor = colors.powerUpText;
+    ctx.shadowBlur = 6 * colors.glow;
     ctx.fillText(`3x ${ship.tripleShot.toFixed(1)}s`, 16, 30);
     ctx.restore();
   }
@@ -297,22 +300,22 @@ export function createAsteroidsGame(
     ctx.font = `18px ${fontFamily}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillStyle = COLORS.text;
-    ctx.shadowColor = COLORS.ship;
-    ctx.shadowBlur = 10;
+    ctx.fillStyle = colors.text;
+    ctx.shadowColor = colors.ship;
+    ctx.shadowBlur = 10 * colors.glow;
     ctx.fillText("PULSA ESPACIO PARA EMPEZAR", W / 2, H / 2 + 80);
     ctx.restore();
   }
 
   function draw() {
-    ctx.fillStyle = COLORS.background;
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, W, H);
 
-    state.particles.forEach((p) => p.draw(ctx, COLORS));
-    state.asteroids.forEach((a) => a.draw(ctx, COLORS));
-    state.powerUps.forEach((p) => p.draw(ctx, COLORS, fontFamily));
-    state.bullets.forEach((b) => b.draw(ctx, COLORS));
-    state.ship.draw(ctx, COLORS, state.phase !== "ready");
+    state.particles.forEach((p) => p.draw(ctx, colors));
+    state.asteroids.forEach((a) => a.draw(ctx, colors));
+    state.powerUps.forEach((p) => p.draw(ctx, colors, fontFamily));
+    state.bullets.forEach((b) => b.draw(ctx, colors));
+    state.ship.draw(ctx, colors, state.phase !== "ready");
 
     drawPowerUpIndicator();
     if (state.phase === "ready") drawStartScreen();
@@ -427,5 +430,19 @@ export function createAsteroidsGame(
     document.removeEventListener("visibilitychange", onVisibilityChange);
   }
 
-  return { start, pause, resume, restart, end, setInputEnabled, destroy };
+  function setSkin(skin: SkinId) {
+    // Solo cambia la paleta: el siguiente frame ya se dibuja con ella.
+    colors = SKINS[skin] ?? SKINS[DEFAULT_SKIN];
+  }
+
+  return {
+    start,
+    pause,
+    resume,
+    restart,
+    end,
+    setInputEnabled,
+    destroy,
+    setSkin,
+  };
 }

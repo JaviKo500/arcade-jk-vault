@@ -1,6 +1,6 @@
 import {
   type AsteroidSize,
-  COLORS,
+  type AsteroidsPalette,
   H,
   POWERUP_TTL,
   RADII,
@@ -12,7 +12,7 @@ import {
 // Port de las clases de references/02-asteroids/game.js. Misma lógica; el
 // contexto, el input y la paleta llegan como parámetros en lugar de globales.
 
-export type Palette = typeof COLORS;
+export type Palette = AsteroidsPalette;
 
 /** Teclas mantenidas, indexadas por `KeyboardEvent.code`. */
 export type InputState = {
@@ -58,7 +58,7 @@ export class Bullet {
     ctx.save();
     ctx.fillStyle = colors.bullet;
     ctx.shadowColor = colors.bullet;
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = 6 * colors.glow;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -123,7 +123,7 @@ export class Asteroid {
     ctx.rotate(this.rot);
     ctx.strokeStyle = colors.asteroid;
     ctx.shadowColor = colors.asteroidGlow;
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 8 * colors.glow;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = "round";
     ctx.beginPath();
@@ -168,7 +168,7 @@ export class PowerUp {
     const pulse = 0.85 + Math.sin(performance.now() / 150) * 0.15;
     ctx.save();
     ctx.shadowColor = colors.powerUp;
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 8 * colors.glow;
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(Math.PI / 4);
@@ -274,7 +274,7 @@ export class Ship {
     ctx.rotate(this.angle);
     ctx.strokeStyle = colors.ship;
     ctx.shadowColor = colors.ship;
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 8 * colors.glow;
     ctx.lineWidth = 1.5;
     ctx.lineJoin = "round";
 
@@ -332,11 +332,14 @@ export class Particle {
 
   draw(ctx: CanvasRenderingContext2D, colors: Palette) {
     const alpha = this.ttl / this.life;
-    ctx.strokeStyle = `rgba(${colors.particle},${alpha.toFixed(2)})`;
+    ctx.save();
+    ctx.globalAlpha = Number(alpha.toFixed(2));
+    ctx.strokeStyle = colors.particle;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
     ctx.lineTo(this.x - this.vx * 0.05, this.y - this.vy * 0.05);
     ctx.stroke();
+    ctx.restore();
   }
 }
