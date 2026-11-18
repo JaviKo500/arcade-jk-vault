@@ -2,6 +2,7 @@ import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   SkinId,
 } from "../types";
 import {
@@ -70,11 +71,14 @@ function resolveFontFamily(canvas: HTMLCanvasElement): string {
 export const createCaidaGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
   const fontFamily = resolveFontFamily(canvas);
+  // En táctil se arranca con el botón A del mando virtual
+  const startText = options?.touch ? "PULSA A" : "PULSA ESPACIO";
 
   // Paleta activa; `setSkin` la cambia sin tocar el estado de la partida.
   let colors = SKINS[DEFAULT_SKIN];
@@ -422,7 +426,7 @@ export const createCaidaGame: GameFactory = (
     text("CAÍDA", cx, H / 2 - 70, 28, colors.accent, "center", 14);
     // Parpadeo suave del texto, como en las máquinas arcade
     if (Math.floor(performance.now() / 500) % 2 === 1) return;
-    text("PULSA ESPACIO", cx, H / 2 + 10, 14, colors.text, "center", 8);
+    text(startText, cx, H / 2 + 10, 14, colors.text, "center", 8);
     text("PARA EMPEZAR", cx, H / 2 + 34, 14, colors.text, "center", 8);
   }
 

@@ -2,6 +2,7 @@ import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   SkinId,
 } from "../types";
 import {
@@ -70,10 +71,15 @@ function resolveFontFamily(canvas: HTMLCanvasElement): string {
 export const createBloqueBusterGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
+  // En táctil se arranca con el botón A del mando virtual
+  const startText = options?.touch
+    ? "PULSA A PARA EMPEZAR"
+    : "PULSA ESPACIO PARA EMPEZAR";
 
   // ── Sonido ──────────────────────────────────────────────────────────────────
   // Solo suena desde update(), que no corre en `ready` ni en pausa: el primer
@@ -295,15 +301,7 @@ export const createBloqueBusterGame: GameFactory = (
     // Parpadeo de máquina arcade, salvo con movimiento reducido
     const visible =
       reducedMotion || Math.floor(performance.now() / 500) % 2 === 0;
-    if (visible)
-      text(
-        "PULSA ESPACIO PARA EMPEZAR",
-        cx,
-        390,
-        14,
-        colors.text,
-        8 * colors.glow,
-      );
+    if (visible) text(startText, cx, 390, 14, colors.text, 8 * colors.glow);
   }
 
   function draw() {

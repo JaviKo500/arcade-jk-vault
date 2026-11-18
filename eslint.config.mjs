@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Material de referencia (maquetas JSX y juegos originales), no código de la app
+    "references/**",
   ]),
   // Disable stylistic rules that conflict with Prettier (must stay last).
   prettier,

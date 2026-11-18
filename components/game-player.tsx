@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/data/games";
 import { GameCanvas } from "@/components/game-canvas";
+import { TouchControls } from "@/components/touch-controls";
 import { useSession } from "@/components/session-provider";
+import { useCoarsePointer } from "@/hooks/use-coarse-pointer";
+import { useFullscreen } from "@/hooks/use-fullscreen";
 import { GAME_ENGINES } from "@/lib/games/registry";
 import type { GameCallbacks, GameInstance, SkinId } from "@/lib/games/types";
 import { insertScore } from "@/lib/data/scores-client";
@@ -26,6 +29,8 @@ const SKIN_LABELS: Record<SkinId, string> = {
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { session } = useSession();
+  // Dispositivo táctil (`pointer: coarse`); `false` en el servidor
+  const isTouch = useCoarsePointer();
 
   // Si el juego tiene motor real, score, vidas y nivel vienen de él; si no,
   // se usa la simulación de puntuación.
@@ -37,6 +42,9 @@ export function GamePlayer({ game }: { game: Game }) {
   const engineRef = useRef<GameInstance | null>(null);
   // Solo los motores que declaran `skins` muestran el selector
   const skins = engine?.skins;
+  // Mando virtual: solo en táctil y si el motor declara su mapeo
+  const touchLayout = engine?.touch;
+  const touchMode = isTouch && hasEngine && touchLayout !== undefined;
   const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
 
   const [score, setScore] = useState(0);
@@ -53,6 +61,22 @@ export function GamePlayer({ game }: { game: Game }) {
 
   const name = nameOverride ?? session?.name ?? "INVITADO";
   const level = hasEngine ? engineLevel : Math.floor(score / 2500) + 1;
+
+  // En táctil horizontal el canvas se ajusta a la altura que deja la nav
+  // (sticky y de alto variable): se publica como `--av-nav-h` en el player.
+  const playerRef = useRef<HTMLDivElement>(null);
+  // Pantalla completa del player (botón solo en táctil)
+  const fullscreen = useFullscreen(playerRef);
+  useEffect(() => {
+    const player = playerRef.current;
+    const nav = document.querySelector<HTMLElement>(".av-nav");
+    if (!touchMode || !player || !nav) return;
+    const observer = new ResizeObserver(() => {
+      player.style.setProperty("--av-nav-h", `${nav.offsetHeight}px`);
+    });
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [touchMode]);
 
   useEffect(() => {
     if (hasEngine || over || paused) return;
@@ -83,6 +107,19 @@ export function GamePlayer({ game }: { game: Game }) {
     }
     if (paused) engine.resume();
     else engine.pause();
+  };
+
+  // REGRESAR (táctil, sin nav): a la página anterior; si se entró directo al
+  // player, no hay a dónde volver y se va a la ficha del juego como SALIR
+  const goBack = () => {
+    // Navigation API: solo cuenta entradas del propio sitio (no about:blank);
+    // sin ella, se mira si la página se abrió desde el propio sitio
+    const nav = (window as { navigation?: { canGoBack?: boolean } }).navigation;
+    const canGoBack =
+      nav?.canGoBack ??
+      document.referrer.startsWith(`${window.location.origin}/`);
+    if (canGoBack) router.back();
+    else router.push(`/games/${game.id}`);
   };
 
   // Con motor, end() dispara onGameOver, que abre el modal
@@ -131,9 +168,12 @@ export function GamePlayer({ game }: { game: Game }) {
   };
 
   return (
-    <div className="av-player fade-in">
+    <div
+      ref={playerRef}
+      className={`av-player fade-in${touchMode ? " is-touch" : ""}`}
+    >
       <div className="player-hud">
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+        <div className="hud-stats">
           <div className="hud-stat">
             <div className="l">Jugador</div>
             <div className="v" style={{ color: "var(--ink)" }}>
@@ -156,6 +196,11 @@ export function GamePlayer({ game }: { game: Game }) {
           </div>
         </div>
         <div className="hud-actions">
+          {touchMode && (
+            <button className="btn ghost" onClick={goBack}>
+              REGRESAR
+            </button>
+          )}
           <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
@@ -168,6 +213,13 @@ export function GamePlayer({ game }: { game: Game }) {
           >
             SALIR
           </button>
+          {touchMode && fullscreen.supported && (
+            <button className="btn hud-fullscreen" onClick={fullscreen.toggle}>
+              {fullscreen.active
+                ? "SALIR DE PANTALLA COMPLETA"
+                : "PANTALLA COMPLETA"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -194,60 +246,68 @@ export function GamePlayer({ game }: { game: Game }) {
         </div>
       )}
 
-      <div className="crt">
-        <div className="crt-screen">
-          {engineFactory ? (
-            <GameCanvas
-              factory={engineFactory}
-              callbacks={engineCallbacks}
-              onInstance={(instance) => {
-                engineRef.current = instance;
-                // Al montar el motor se restaura la skin guardada (cliente)
-                if (instance && skins) {
-                  const saved = getSkinPreference(game.id, skins);
-                  instance.setSkin?.(saved);
-                  setSkin(saved);
-                }
-              }}
-            />
-          ) : (
-            <div className="game-arena">
-              <div className="grid-floor" />
-              <div className="enemy e1" />
-              <div className="enemy e2" />
-              <div className="enemy e3" />
-              <div className="player-ship" />
-            </div>
-          )}
-          {paused && (
-            <div
-              className="crt-content"
-              style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
-            >
-              <div>
-                <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
-                  EN PAUSA
-                </div>
-                <div
-                  className="mono"
-                  style={{
-                    fontSize: 11,
-                    color: "var(--ink-dim)",
-                    marginTop: 10,
-                    letterSpacing: "0.16em",
-                  }}
-                >
-                  PULSA REANUDAR PARA CONTINUAR
+      {/* En táctil horizontal: cruceta | canvas | A/B */}
+      <div className="play-area">
+        <div className="crt">
+          <div className="crt-screen">
+            {engineFactory ? (
+              <GameCanvas
+                factory={engineFactory}
+                callbacks={engineCallbacks}
+                touch={touchMode}
+                onInstance={(instance) => {
+                  engineRef.current = instance;
+                  // Al montar el motor se restaura la skin guardada (cliente)
+                  if (instance && skins) {
+                    const saved = getSkinPreference(game.id, skins);
+                    instance.setSkin?.(saved);
+                    setSkin(saved);
+                  }
+                }}
+              />
+            ) : (
+              <div className="game-arena">
+                <div className="grid-floor" />
+                <div className="enemy e1" />
+                <div className="enemy e2" />
+                <div className="enemy e3" />
+                <div className="player-ship" />
+              </div>
+            )}
+            {paused && (
+              <div
+                className="crt-content"
+                style={{ background: "rgba(0,0,0,0.6)", zIndex: 5 }}
+              >
+                <div>
+                  <div className="pixel neon-yellow" style={{ fontSize: 22 }}>
+                    EN PAUSA
+                  </div>
+                  <div
+                    className="mono"
+                    style={{
+                      fontSize: 11,
+                      color: "var(--ink-dim)",
+                      marginTop: 10,
+                      letterSpacing: "0.16em",
+                    }}
+                  >
+                    PULSA REANUDAR PARA CONTINUAR
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+          <div className="crt-bottom">
+            <span className="led">SEÑAL OK</span>
+            <span>{game.title} · CRT-83 · 60 HZ</span>
+            <span>CARGA · 1MB</span>
+          </div>
         </div>
-        <div className="crt-bottom">
-          <span className="led">SEÑAL OK</span>
-          <span>{game.title} · CRT-83 · 60 HZ</span>
-          <span>CARGA · 1MB</span>
-        </div>
+
+        {touchMode && touchLayout && (
+          <TouchControls layout={touchLayout} disabled={over} />
+        )}
       </div>
 
       {over && (

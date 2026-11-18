@@ -35,9 +35,31 @@ export type GameInstance = {
   setSkin?: (skin: SkinId) => void;
 };
 
+/** Botones del mando virtual. */
+export type TouchButton = "up" | "down" | "left" | "right" | "a" | "b";
+
+/** Lo que envía un botón: el `KeyboardEvent.code` que el motor ya escucha. */
+export type TouchBinding = {
+  /** P. ej. "ArrowLeft", "Space". */
+  code: string;
+  /** Rótulo corto bajo A/B (opcional), p. ej. "FUEGO", "ROTAR". */
+  label?: string;
+};
+
+/** Botón ausente = se dibuja apagado y no envía nada. */
+export type TouchLayout = Partial<Record<TouchButton, TouchBinding>>;
+
+/** Opciones de creación del motor. */
+export type GameOptions = {
+  /** `true` en dispositivos táctiles: el motor dibuja "PULSA A" en lugar de "PULSA ESPACIO". */
+  touch: boolean;
+};
+
 export type GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  /** Opcional: sin él, `touch = false`. */
+  options?: GameOptions,
 ) => GameInstance;
 
 export type GameEngine = {
@@ -50,4 +72,10 @@ export type GameEngine = {
    * `setSkin`. Sin `skins`, no hay selector.
    */
   skins?: readonly SkinId[];
+  /**
+   * Mapeo del mando virtual. Sin `touch`, no se muestra mando aunque el
+   * dispositivo sea táctil. La entrada llega como `KeyboardEvent` sintético
+   * en `window`, así que el motor no debe filtrar por `isTrusted`.
+   */
+  touch?: TouchLayout;
 };
