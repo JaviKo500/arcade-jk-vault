@@ -2,6 +2,7 @@ import type {
   GameCallbacks,
   GameFactory,
   GameInstance,
+  GameOptions,
   SkinId,
 } from "../types";
 import {
@@ -80,11 +81,16 @@ function resolveFontFamily(canvas: HTMLCanvasElement): string {
 export const createSerpentinaGame: GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance => {
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
   const fontFamily = resolveFontFamily(canvas);
+  // En táctil se arranca con el botón A del mando virtual
+  const startText = options?.touch
+    ? "PULSA A PARA EMPEZAR"
+    : "PULSA ESPACIO PARA EMPEZAR";
   const reducedMotion = window.matchMedia(
     "(prefers-reduced-motion: reduce)",
   ).matches;
@@ -273,8 +279,7 @@ export const createSerpentinaGame: GameFactory = (
     const cx = W / 2;
     text("SERPENTINA", cx, 210, 32, colors.head, 18);
     if (!state.imageReady) text("CARGANDO…", cx, 400, 14, colors.textDim);
-    else if (blinkOn(500))
-      text("PULSA ESPACIO PARA EMPEZAR", cx, 400, 14, colors.text, 8);
+    else if (blinkOn(500)) text(startText, cx, 400, 14, colors.text, 8);
     text("FLECHAS O WASD PARA GIRAR", cx, 444, 10, colors.textDim);
   }
 

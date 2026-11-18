@@ -1,4 +1,9 @@
-import type { GameCallbacks, GameInstance, SkinId } from "../types";
+import type {
+  GameCallbacks,
+  GameInstance,
+  GameOptions,
+  SkinId,
+} from "../types";
 import {
   DEFAULT_SKIN,
   H,
@@ -56,11 +61,16 @@ function resolveFontFamily(canvas: HTMLCanvasElement): string {
 export function createAsteroidsGame(
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions,
 ): GameInstance {
   const ctxOrNull = canvas.getContext("2d");
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
   const fontFamily = resolveFontFamily(canvas);
+  // En táctil se arranca con el botón A del mando virtual
+  const startText = options?.touch
+    ? "PULSA A PARA EMPEZAR"
+    : "PULSA ESPACIO PARA EMPEZAR";
   // Paleta activa; `setSkin` la cambia sin tocar el estado de la partida.
   let colors = SKINS[DEFAULT_SKIN];
 
@@ -303,7 +313,7 @@ export function createAsteroidsGame(
     ctx.fillStyle = colors.text;
     ctx.shadowColor = colors.ship;
     ctx.shadowBlur = 10 * colors.glow;
-    ctx.fillText("PULSA ESPACIO PARA EMPEZAR", W / 2, H / 2 + 80);
+    ctx.fillText(startText, W / 2, H / 2 + 80);
     ctx.restore();
   }
 
