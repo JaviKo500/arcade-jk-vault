@@ -109,6 +109,19 @@ export function GamePlayer({ game }: { game: Game }) {
     else engine.pause();
   };
 
+  // REGRESAR (táctil, sin nav): a la página anterior; si se entró directo al
+  // player, no hay a dónde volver y se va a la ficha del juego como SALIR
+  const goBack = () => {
+    // Navigation API: solo cuenta entradas del propio sitio (no about:blank);
+    // sin ella, se mira si la página se abrió desde el propio sitio
+    const nav = (window as { navigation?: { canGoBack?: boolean } }).navigation;
+    const canGoBack =
+      nav?.canGoBack ??
+      document.referrer.startsWith(`${window.location.origin}/`);
+    if (canGoBack) router.back();
+    else router.push(`/games/${game.id}`);
+  };
+
   // Con motor, end() dispara onGameOver, que abre el modal
   const endGame = () => {
     const engine = engineRef.current;
@@ -183,6 +196,11 @@ export function GamePlayer({ game }: { game: Game }) {
           </div>
         </div>
         <div className="hud-actions">
+          {touchMode && (
+            <button className="btn ghost" onClick={goBack}>
+              REGRESAR
+            </button>
+          )}
           <button className="btn yellow" onClick={togglePause}>
             {paused ? "REANUDAR" : "PAUSA"}
           </button>
@@ -195,7 +213,7 @@ export function GamePlayer({ game }: { game: Game }) {
           >
             SALIR
           </button>
-          {touchMode && (
+          {touchMode && fullscreen.supported && (
             <button className="btn hud-fullscreen" onClick={fullscreen.toggle}>
               {fullscreen.active
                 ? "SALIR DE PANTALLA COMPLETA"

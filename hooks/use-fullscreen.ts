@@ -3,10 +3,6 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import type { RefObject } from "react";
 
-export type FullscreenMode = "native" | "immersive";
-
-const IMMERSIVE_CLASS = "av-immersive";
-
 // Safari en iPad solo expone la Fullscreen API con prefijo `webkit`
 type WebkitDocument = Document & {
   webkitFullscreenEnabled?: boolean;
@@ -22,47 +18,42 @@ function fullscreenElement(): Element | null {
   return doc.fullscreenElement ?? doc.webkitFullscreenElement ?? null;
 }
 
-function supportsNative(): boolean {
+function supportsFullscreen(): boolean {
   const doc = document as WebkitDocument;
   return Boolean(doc.fullscreenEnabled || doc.webkitFullscreenEnabled);
 }
 
-function exitNative() {
+function exitFullscreen() {
   const doc = document as WebkitDocument;
   if (!fullscreenElement()) return;
   if (doc.exitFullscreen) void doc.exitFullscreen().catch(() => {});
   else void doc.webkitExitFullscreen?.();
 }
 
-function setImmersive(on: boolean) {
-  document.documentElement.classList.toggle(IMMERSIVE_CLASS, on);
-}
-
 const noopSubscribe = () => () => {};
 
 /**
- * Pantalla completa del player. `native` usa la Fullscreen API sobre
- * `target`; donde no existe (iPhone Safari), `immersive` añade `av-immersive`
- * a `<html>`, que oculta nav y footer. Al desmontar se sale de ambos modos.
+ * Pantalla completa nativa (Fullscreen API) sobre `target`. `supported` es
+ * `false` en el servidor y donde no hay API (iPhone Safari). Al desmontar el
+ * player se sale de la pantalla completa.
  */
 export function useFullscreen(target: RefObject<HTMLElement | null>): {
   active: boolean;
-  mode: FullscreenMode;
+  supported: boolean;
   toggle: () => void;
 } {
-  const mode = useSyncExternalStore<FullscreenMode>(
+  const supported = useSyncExternalStore(
     noopSubscribe,
-    () => (supportsNative() ? "native" : "immersive"),
-    () => "immersive",
+    supportsFullscreen,
+    () => false,
   );
-  const [nativeActive, setNativeActive] = useState(false);
-  const [immersiveActive, setImmersiveActive] = useState(false);
+  const [active, setActive] = useState(false);
 
   // El usuario también puede salir con el gesto o la tecla del sistema
   useEffect(() => {
     const onChange = () => {
       const el = fullscreenElement();
-      setNativeActive(el !== null && el === target.current);
+      setActive(el !== null && el === target.current);
     };
     document.addEventListener("fullscreenchange", onChange);
     document.addEventListener("webkitfullscreenchange", onChange);
@@ -72,27 +63,12 @@ export function useFullscreen(target: RefObject<HTMLElement | null>): {
     };
   }, [target]);
 
-  // `av-immersive` en <html> sigue al estado del modo inmersivo
-  useEffect(() => {
-    setImmersive(immersiveActive);
-  }, [immersiveActive]);
-
-  // Salir del player (SALIR o cambio de ruta) deja la página normal
-  useEffect(
-    () => () => {
-      exitNative();
-      setImmersive(false);
-    },
-    [],
-  );
+  // Salir del player (SALIR, REGRESAR o cambio de ruta) deja la página normal
+  useEffect(() => () => exitFullscreen(), []);
 
   const toggle = useCallback(() => {
-    if (mode === "immersive") {
-      setImmersiveActive((on) => !on);
-      return;
-    }
     if (fullscreenElement()) {
-      exitNative();
+      exitFullscreen();
       return;
     }
     const el = target.current as WebkitElement | null;
@@ -103,11 +79,7 @@ export function useFullscreen(target: RefObject<HTMLElement | null>): {
     } else {
       void el.webkitRequestFullscreen?.();
     }
-  }, [mode, target]);
+  }, [target]);
 
-  return {
-    active: mode === "native" ? nativeActive : immersiveActive,
-    mode,
-    toggle,
-  };
+  return { active, supported, toggle };
 }

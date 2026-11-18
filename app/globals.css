@@ -1442,7 +1442,8 @@ a { color: inherit; text-decoration: none; }
   border-radius: 4px;
   box-shadow: 0 0 0 1px var(--line), 0 0 18px rgba(0, 245, 255, 0.18);
 }
-.is-touch .touch-controls { margin-top: 10px; }
+/* aire entre la pantalla y la cruceta (en horizontal no aplica: display: contents) */
+.is-touch .touch-controls { margin-top: 26px; }
 /* sin zoom, scroll, selección ni menú al tocar el área de juego */
 .is-touch .crt-screen,
 .is-touch .game-canvas,
@@ -1623,18 +1624,20 @@ a { color: inherit; text-decoration: none; }
   }
   .is-touch .player-hud {
     grid-column: 1; grid-row: 1;
-    flex-wrap: nowrap;
-    gap: 10px;
+    /* sin nav sobra alto: los botones bajan a otra línea si no caben */
+    flex-wrap: wrap;
+    gap: 4px 10px;
     margin: 0;
     padding: 4px 8px;
   }
   .is-touch .hud-stats { flex-wrap: nowrap; gap: 14px; }
   .is-touch .hud-stat .l { font-size: 7px; }
   .is-touch .hud-stat .v { font-size: 10px; white-space: nowrap; }
-  .is-touch .hud-actions { flex-wrap: nowrap; }
+  .is-touch .hud-actions { flex-wrap: wrap; }
   .is-touch .hud-actions .btn { padding: 6px 8px; font-size: 7px; }
   .is-touch .skin-picker {
     grid-column: 2; grid-row: 1;
+    align-self: start;
     flex-wrap: nowrap;
     margin: 0;
     padding: 4px 6px;
@@ -1675,9 +1678,9 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* pantalla completa del player (hooks/use-fullscreen.ts) */
-/* modo inmersivo (sin Fullscreen API, p. ej. iPhone): fuera nav y footer */
-html.av-immersive .av-nav,
-html.av-immersive #root > footer { display: none; }
+/* player táctil: sin nav ni footer, todo el alto para el juego */
+html:has(.av-player.is-touch) .av-nav,
+html:has(.av-player.is-touch) #root > footer { display: none; }
 /* nativo: el player pasa a ser la página, sin la nav que queda fuera */
 .av-player.is-touch:fullscreen {
   min-height: 100dvh;
