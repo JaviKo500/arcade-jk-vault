@@ -7,6 +7,7 @@ import { GameCanvas } from "@/components/game-canvas";
 import { TouchControls } from "@/components/touch-controls";
 import { useSession } from "@/components/session-provider";
 import { useCoarsePointer } from "@/hooks/use-coarse-pointer";
+import { useFullscreen } from "@/hooks/use-fullscreen";
 import { GAME_ENGINES } from "@/lib/games/registry";
 import type { GameCallbacks, GameInstance, SkinId } from "@/lib/games/types";
 import { insertScore } from "@/lib/data/scores-client";
@@ -64,6 +65,8 @@ export function GamePlayer({ game }: { game: Game }) {
   // En táctil horizontal el canvas se ajusta a la altura que deja la nav
   // (sticky y de alto variable): se publica como `--av-nav-h` en el player.
   const playerRef = useRef<HTMLDivElement>(null);
+  // Pantalla completa del player (botón solo en táctil)
+  const fullscreen = useFullscreen(playerRef);
   useEffect(() => {
     const player = playerRef.current;
     const nav = document.querySelector<HTMLElement>(".av-nav");
@@ -192,6 +195,13 @@ export function GamePlayer({ game }: { game: Game }) {
           >
             SALIR
           </button>
+          {touchMode && (
+            <button className="btn hud-fullscreen" onClick={fullscreen.toggle}>
+              {fullscreen.active
+                ? "SALIR DE PANTALLA COMPLETA"
+                : "PANTALLA COMPLETA"}
+            </button>
+          )}
         </div>
       </div>
 
