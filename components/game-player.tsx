@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Game } from "@/data/games";
 import { GameCanvas } from "@/components/game-canvas";
 import { useSession } from "@/components/session-provider";
+import { useCoarsePointer } from "@/hooks/use-coarse-pointer";
 import { GAME_ENGINES } from "@/lib/games/registry";
 import type { GameCallbacks, GameInstance, SkinId } from "@/lib/games/types";
 import { insertScore } from "@/lib/data/scores-client";
@@ -26,6 +27,8 @@ const SKIN_LABELS: Record<SkinId, string> = {
 export function GamePlayer({ game }: { game: Game }) {
   const router = useRouter();
   const { session } = useSession();
+  // Dispositivo táctil (`pointer: coarse`); `false` en el servidor
+  const isTouch = useCoarsePointer();
 
   // Si el juego tiene motor real, score, vidas y nivel vienen de él; si no,
   // se usa la simulación de puntuación.
@@ -200,6 +203,7 @@ export function GamePlayer({ game }: { game: Game }) {
             <GameCanvas
               factory={engineFactory}
               callbacks={engineCallbacks}
+              touch={isTouch}
               onInstance={(instance) => {
                 engineRef.current = instance;
                 // Al montar el motor se restaura la skin guardada (cliente)
