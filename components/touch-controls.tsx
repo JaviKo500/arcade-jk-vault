@@ -102,11 +102,6 @@ export function TouchControls({ layout, disabled }: TouchControlsProps) {
     const binding = layout[button];
     if (disabled || !binding) return;
     event.preventDefault();
-    // En táctil el puntero queda capturado por el botón: sin soltarlo,
-    // `pointerleave` no llega al arrastrar el dedo fuera.
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
     // Un segundo dedo sobre un botón ya pulsado no hace nada
     if (heldRef.current.has(button)) return;
 
@@ -133,6 +128,19 @@ export function TouchControls({ layout, disabled }: TouchControlsProps) {
 
   const handlers = (button: TouchButton) => ({
     onPointerDown: (event: ReactPointerEvent) => press(button, event),
+    // En táctil el navegador captura el dedo en el botón: `pointerleave` no
+    // llega hasta levantarlo, pero los `pointermove` siguen llegando aquí.
+    // Si el dedo sale del botón, la tecla se suelta.
+    onPointerMove: (event: ReactPointerEvent) => {
+      if (!heldRef.current.has(button)) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const inside =
+        event.clientX >= rect.left &&
+        event.clientX <= rect.right &&
+        event.clientY >= rect.top &&
+        event.clientY <= rect.bottom;
+      if (!inside) lift(button, event);
+    },
     onPointerUp: (event: ReactPointerEvent) => lift(button, event),
     onPointerCancel: (event: ReactPointerEvent) => lift(button, event),
     onPointerLeave: (event: ReactPointerEvent) => lift(button, event),

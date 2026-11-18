@@ -4,13 +4,13 @@ Este documento resume lo que ya existe tras la SPEC 05 y la SPEC 06. **Verifica 
 
 ## Qué hace falta para que un juego sea jugable y tenga leaderboard
 
-| #   | Pieza    | Dónde                                                          | Notas                                                                                      |
-| --- | -------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1   | Motor    | `lib/games/<id>/` (`constants.ts`, `entities.ts`, `engine.ts`) | Exporta `create<Name>Game: GameFactory`.                                                   |
-| 2   | Registro | `lib/games/registry.ts` → `GAME_ENGINES`                       | La clave debe ser **exactamente** `games.id`. Sin entrada, `GamePlayer` usa la simulación. |
-| 3   | Catálogo | Migración nueva en `supabase/migrations/`                      | `insert` (juego nuevo) o `update` (placeholder existente) en `public.games`.               |
-| 4   | Portada  | `.cover-<id>` en `app/globals.css`, junto a las demás          | Diseñada con `/frontend-design`.                                                           |
-| 5   | Nada más | `GamePlayer`, `GameCanvas`, `lib/data/*`, vistas               | El HUD, el modal, el guardado y el ranking funcionan por `game.id`.                        |
+| #   | Pieza    | Dónde                                                          | Notas                                                                                                                                 |
+| --- | -------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Motor    | `lib/games/<id>/` (`constants.ts`, `entities.ts`, `engine.ts`) | Exporta `create<Name>Game: GameFactory`.                                                                                              |
+| 2   | Registro | `lib/games/registry.ts` → `GAME_ENGINES`                       | La clave debe ser **exactamente** `games.id`. Sin entrada, `GamePlayer` usa la simulación. Declara `touch` para tener mando en móvil. |
+| 3   | Catálogo | Migración nueva en `supabase/migrations/`                      | `insert` (juego nuevo) o `update` (placeholder existente) en `public.games`.                                                          |
+| 4   | Portada  | `.cover-<id>` en `app/globals.css`, junto a las demás          | Diseñada con `/frontend-design`.                                                                                                      |
+| 5   | Nada más | `GamePlayer`, `GameCanvas`, `lib/data/*`, vistas               | El HUD, el modal, el guardado y el ranking funcionan por `game.id`.                                                                   |
 
 ## 1. Contrato del motor — `lib/games/types.ts`
 
@@ -35,12 +35,24 @@ type GameInstance = {
 };
 
 type SkinId = "classic" | "neon" | "retro";
-type GameEngine = { factory; hasLives?: boolean; skins?: readonly SkinId[] };
+type GameEngine = {
+  factory;
+  hasLives?: boolean;
+  skins?: readonly SkinId[];
+  touch?: TouchLayout; // mando virtual (ver "Controles táctiles")
+};
+
+type GameOptions = { touch: boolean }; // true en dispositivos táctiles
 
 type GameFactory = (
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks,
+  options?: GameOptions, // opcional: sin él, touch = false
 ) => GameInstance;
+
+type TouchButton = "up" | "down" | "left" | "right" | "a" | "b";
+type TouchBinding = { code: string; label?: string }; // KeyboardEvent.code + rótulo bajo A/B
+type TouchLayout = Partial<Record<TouchButton, TouchBinding>>; // botón ausente = apagado
 ```
 
 ### Patrones obligatorios (ver `lib/games/asteroids/engine.ts`)
@@ -70,9 +82,16 @@ type GameFactory = (
 - `GamePlayer` muestra el selector `.skin-picker` (botones CLÁSICO / NEÓN / RETRO) entre el HUD y el CRT solo si el motor declara `skins`. La elección se guarda con `lib/skin-preference.ts` en `localStorage` (`arcade-vault:skin:<gameId>`) y se restaura en `onInstance` al montar el motor; valor ausente o no declarado → `classic`.
 - Cada skin debe pasar contraste WCAG sobre su fondo y sobre `--bg`: ≥ 3:1 elementos de juego, ≥ 4.5:1 texto en canvas. Lo verifica el subagente `skin-designer`.
 
+### Controles táctiles (SPEC 10) — todos los motores con registro
+
+- `GamePlayer` detecta táctil con `useCoarsePointer()` (`hooks/use-coarse-pointer.ts`, `matchMedia("(pointer: coarse)")`, `false` en servidor). Si coincide **y** el motor declara `touch`, añade `.is-touch` al player (HUD compacto, sin marco CRT ni "SEÑAL OK", layout propio en horizontal), muestra el botón PANTALLA COMPLETA (`hooks/use-fullscreen.ts`) y monta `components/touch-controls.tsx` bajo el canvas.
+- El mando (cruceta + A/B) envía `KeyboardEvent` **sintéticos** (`keydown`/`keyup`) a `window` con el `code` de `touch`. El motor no cambia su input: debe escuchar `window` por `e.code` y **no** filtrar por `isTrusted`. La cruceta repite `keydown` con `repeat: true` (180 ms de retardo, cada 60 ms); A/B no repiten. Con el modal abierto el mando no envía nada.
+- El factory lee `options?.touch` y, si es `true`, dibuja "PULSA A PARA EMPEZAR" en lugar de "PULSA ESPACIO PARA EMPEZAR". Mapear el arranque/acción principal a `a: { code: "Space", label: "…" }`.
+- `lib/games/registry.ts`: declarar `touch` con solo los botones que usa el juego (los ausentes se ven apagados). Ejemplo `caida`: `{ down: {code:"ArrowDown"}, left: {code:"ArrowLeft"}, right: {code:"ArrowRight"}, a: {code:"Space", label:"CAER"}, b: {code:"ArrowUp", label:"ROTAR"} }`.
+
 ## 2. Montaje — `components/game-canvas.tsx` y `components/game-player.tsx`
 
-- `GameCanvas` renderiza `<canvas className="game-canvas" width={800} height={600} />`, crea la instancia en un `useEffect` que depende solo de la factory, llama a `start()` y a `destroy()` en el cleanup. Los callbacks viven en refs.
+- `GameCanvas` renderiza `<canvas className="game-canvas" width={800} height={600} />`, crea la instancia en un `useEffect` que depende de `[factory, touch]` (prop `touch` → `factory(canvas, callbacks, { touch })`; si cambia al hidratar, el motor se recrea en la pantalla de inicio), llama a `start()` y a `destroy()` en el cleanup. Los callbacks viven en refs.
 - `.game-canvas` en `app/globals.css`: `width: 100%; height: auto; aspect-ratio: 4 / 3`.
 - `GamePlayer` elige motor con `GAME_ENGINES[game.id]`. Sin motor, usa la simulación (intervalo de puntos y `.game-arena`).
 - HUD React: Jugador, Puntuación, **Vidas** (`♥` repetido) y Nivel. Botones PAUSA/REANUDAR, FIN y SALIR.
