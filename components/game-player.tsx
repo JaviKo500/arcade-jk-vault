@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Game } from "@/data/games";
 import { GameCanvas } from "@/components/game-canvas";
+import { TouchControls } from "@/components/touch-controls";
 import { useSession } from "@/components/session-provider";
 import { useCoarsePointer } from "@/hooks/use-coarse-pointer";
 import { GAME_ENGINES } from "@/lib/games/registry";
@@ -40,6 +41,9 @@ export function GamePlayer({ game }: { game: Game }) {
   const engineRef = useRef<GameInstance | null>(null);
   // Solo los motores que declaran `skins` muestran el selector
   const skins = engine?.skins;
+  // Mando virtual: solo en táctil y si el motor declara su mapeo
+  const touchLayout = engine?.touch;
+  const touchMode = isTouch && hasEngine && touchLayout !== undefined;
   const [skin, setSkin] = useState<SkinId>(DEFAULT_SKIN);
 
   const [score, setScore] = useState(0);
@@ -134,9 +138,9 @@ export function GamePlayer({ game }: { game: Game }) {
   };
 
   return (
-    <div className="av-player fade-in">
+    <div className={`av-player fade-in${touchMode ? " is-touch" : ""}`}>
       <div className="player-hud">
-        <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+        <div className="hud-stats">
           <div className="hud-stat">
             <div className="l">Jugador</div>
             <div className="v" style={{ color: "var(--ink)" }}>
@@ -203,7 +207,7 @@ export function GamePlayer({ game }: { game: Game }) {
             <GameCanvas
               factory={engineFactory}
               callbacks={engineCallbacks}
-              touch={isTouch}
+              touch={touchMode}
               onInstance={(instance) => {
                 engineRef.current = instance;
                 // Al montar el motor se restaura la skin guardada (cliente)
@@ -253,6 +257,10 @@ export function GamePlayer({ game }: { game: Game }) {
           <span>CARGA · 1MB</span>
         </div>
       </div>
+
+      {touchMode && touchLayout && (
+        <TouchControls layout={touchLayout} disabled={over} />
+      )}
 
       {over && (
         <div className="modal-bd">
