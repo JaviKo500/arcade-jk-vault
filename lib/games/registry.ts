@@ -15,7 +15,11 @@ export const GAME_ENGINES: Partial<Record<string, GameEngine>> = {
     factory: createBloqueBusterGame,
     skins: ["classic", "neon", "retro"],
   },
-  caida: { factory: createCaidaGame, hasLives: false },
+  caida: {
+    factory: createCaidaGame,
+    hasLives: false,
+    skins: ["classic", "neon", "retro"],
+  },
   serpentina: {
     factory: createSerpentinaGame,
     skins: ["classic", "neon", "retro"],

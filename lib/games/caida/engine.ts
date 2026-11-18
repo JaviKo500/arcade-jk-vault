@@ -1,16 +1,22 @@
-import type { GameCallbacks, GameFactory, GameInstance } from "../types";
+import type {
+  GameCallbacks,
+  GameFactory,
+  GameInstance,
+  SkinId,
+} from "../types";
 import {
   BLOCK,
   BOARD_X,
   BOARD_Y,
-  COLORS,
   COLS,
+  DEFAULT_SKIN,
   H,
   KICKS,
   LINE_SCORES,
   MAX_DT,
   MAX_SCORE,
   ROWS,
+  SKINS,
   W,
 } from "./constants";
 import {
@@ -69,6 +75,9 @@ export const createCaidaGame: GameFactory = (
   if (!ctxOrNull) throw new Error("Canvas 2D no disponible");
   const ctx: CanvasRenderingContext2D = ctxOrNull;
   const fontFamily = resolveFontFamily(canvas);
+
+  // Paleta activa; `setSkin` la cambia sin tocar el estado de la partida.
+  let colors = SKINS[DEFAULT_SKIN];
 
   // ── Estado ──────────────────────────────────────────────────────────────────
   const state: EngineState = createInitialState();
@@ -216,9 +225,9 @@ export const createCaidaGame: GameFactory = (
     ctx.textAlign = align;
     ctx.textBaseline = "top";
     ctx.fillStyle = color;
-    if (glow) {
+    if (glow && colors.glow) {
       ctx.shadowColor = color;
-      ctx.shadowBlur = glow;
+      ctx.shadowBlur = glow * colors.glow;
     }
     ctx.fillText(value, x, y);
     ctx.restore();
@@ -230,6 +239,7 @@ export const createCaidaGame: GameFactory = (
         if (piece.shape[r][c] && row + r >= 0)
           drawBlock(
             ctx,
+            colors,
             BOARD_X + (piece.x + c) * BLOCK,
             BOARD_Y + (row + r) * BLOCK,
             piece.shape[r][c],
@@ -239,11 +249,11 @@ export const createCaidaGame: GameFactory = (
   }
 
   function drawBoard() {
-    ctx.fillStyle = COLORS.well;
+    ctx.fillStyle = colors.well;
     ctx.fillRect(BOARD_X, BOARD_Y, BOARD_W, BOARD_H);
 
     // Rejilla tenue
-    ctx.strokeStyle = COLORS.grid;
+    ctx.strokeStyle = colors.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let c = 1; c < COLS; c++) {
@@ -261,6 +271,7 @@ export const createCaidaGame: GameFactory = (
       for (let c = 0; c < COLS; c++)
         drawBlock(
           ctx,
+          colors,
           BOARD_X + c * BLOCK,
           BOARD_Y + r * BLOCK,
           board[r][c],
@@ -270,16 +281,16 @@ export const createCaidaGame: GameFactory = (
     if (state.phase !== "ready") {
       const { current } = state;
       if (state.phase === "playing")
-        drawPiece(current, ghostY(state.board, current), 0.2);
+        drawPiece(current, ghostY(state.board, current), colors.ghostAlpha);
       drawPiece(current, current.y);
     }
 
     // Raíles neón del pozo
     ctx.save();
-    ctx.strokeStyle = COLORS.accent;
+    ctx.strokeStyle = colors.accent;
     ctx.lineWidth = 2;
-    ctx.shadowColor = COLORS.accent;
-    ctx.shadowBlur = 12;
+    ctx.shadowColor = colors.accent;
+    ctx.shadowBlur = 12 * colors.glow;
     ctx.beginPath();
     ctx.moveTo(BOARD_X - 1, 0);
     ctx.lineTo(BOARD_X - 1, H);
@@ -297,7 +308,7 @@ export const createCaidaGame: GameFactory = (
     const h = 24;
     const w = cap.label ? Math.max(h, cap.label.length * 8 + 14) : h;
     ctx.save();
-    ctx.strokeStyle = COLORS.keycap;
+    ctx.strokeStyle = colors.keycap;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(x + 0.5, y + 0.5, w - 1, h - 1, 4);
@@ -305,7 +316,7 @@ export const createCaidaGame: GameFactory = (
     ctx.restore();
 
     if (cap.label) {
-      text(cap.label, x + w / 2, y + 8, 8, COLORS.text, "center");
+      text(cap.label, x + w / 2, y + 8, 8, colors.text, "center");
     } else if (cap.arrow) {
       const cx = x + w / 2;
       const cy = y + h / 2;
@@ -333,7 +344,7 @@ export const createCaidaGame: GameFactory = (
         ],
       };
       const [a, b, c] = pts[cap.arrow];
-      ctx.fillStyle = COLORS.text;
+      ctx.fillStyle = colors.text;
       ctx.beginPath();
       ctx.moveTo(...a);
       ctx.lineTo(...b);
@@ -353,25 +364,25 @@ export const createCaidaGame: GameFactory = (
   ];
 
   function drawControlsPanel() {
-    text("CONTROLES", PANEL_PAD, 48, 10, COLORS.accent, "left", 8);
+    text("CONTROLES", PANEL_PAD, 48, 10, colors.accent, "left", 8);
     CONTROLS.forEach((row, i) => {
       const y = 92 + i * 48;
       let x = PANEL_PAD;
       for (const cap of row.caps) x += drawKeycap(cap, x, y) + 6;
-      text(row.action, 136, y + 8, 8, COLORS.textDim);
+      text(row.action, 136, y + 8, 8, colors.textDim);
     });
   }
 
   function drawNextPanel() {
     const cx = RIGHT_X + RIGHT_W / 2;
-    text("SIGUIENTE", cx, 48, 10, COLORS.accent, "center", 8);
+    text("SIGUIENTE", cx, 48, 10, colors.accent, "center", 8);
 
     // Caja de 4×4 celdas, con la pieza centrada por sus celdas ocupadas
     const box = 4 * BLOCK;
     const boxX = cx - box / 2;
     const boxY = 84;
     ctx.save();
-    ctx.strokeStyle = COLORS.keycap;
+    ctx.strokeStyle = colors.keycap;
     ctx.lineWidth = 1;
     ctx.strokeRect(boxX - 8.5, boxY - 8.5, box + 17, box + 17);
     ctx.restore();
@@ -395,27 +406,28 @@ export const createCaidaGame: GameFactory = (
       for (let c = minC; c <= maxC; c++)
         drawBlock(
           ctx,
+          colors,
           offX + (c - minC) * BLOCK,
           offY + (r - minR) * BLOCK,
           shape[r][c],
           BLOCK,
         );
 
-    text("LÍNEAS", cx, 260, 10, COLORS.accent, "center", 8);
-    text(String(state.lines), cx, 292, 28, COLORS.text, "center", 10);
+    text("LÍNEAS", cx, 260, 10, colors.accent, "center", 8);
+    text(String(state.lines), cx, 292, 28, colors.text, "center", 10);
   }
 
   function drawStartScreen() {
     const cx = BOARD_X + BOARD_W / 2;
-    text("CAÍDA", cx, H / 2 - 70, 28, COLORS.accent, "center", 14);
+    text("CAÍDA", cx, H / 2 - 70, 28, colors.accent, "center", 14);
     // Parpadeo suave del texto, como en las máquinas arcade
     if (Math.floor(performance.now() / 500) % 2 === 1) return;
-    text("PULSA ESPACIO", cx, H / 2 + 10, 14, COLORS.text, "center", 8);
-    text("PARA EMPEZAR", cx, H / 2 + 34, 14, COLORS.text, "center", 8);
+    text("PULSA ESPACIO", cx, H / 2 + 10, 14, colors.text, "center", 8);
+    text("PARA EMPEZAR", cx, H / 2 + 34, 14, colors.text, "center", 8);
   }
 
   function draw() {
-    ctx.fillStyle = COLORS.background;
+    ctx.fillStyle = colors.background;
     ctx.fillRect(0, 0, W, H);
 
     drawBoard();
@@ -574,5 +586,19 @@ export const createCaidaGame: GameFactory = (
     document.removeEventListener("visibilitychange", onVisibilityChange);
   }
 
-  return { start, pause, resume, restart, end, setInputEnabled, destroy };
+  // Solo cambia la paleta: no reinicia, no toca la puntuación ni dispara callbacks.
+  function setSkin(skin: SkinId) {
+    colors = SKINS[skin] ?? SKINS[DEFAULT_SKIN];
+  }
+
+  return {
+    start,
+    pause,
+    resume,
+    restart,
+    end,
+    setInputEnabled,
+    destroy,
+    setSkin,
+  };
 };

@@ -8,12 +8,12 @@ Leyenda: ✅ implementada y verificada · ⚠️ implementada con fallos de cont
 
 ## Estado
 
-| ID              | Título        | CLÁSICO | NEÓN | RETRO | Modo oscuro            | Última revisión |
-| --------------- | ------------- | ------- | ---- | ----- | ---------------------- | --------------- |
-| `asteroids`     | ASTEROIDS     | ✅      | ✅   | ✅    | OK · peor 4.74 (retro) | 2026-11-17      |
+| ID              | Título        | CLÁSICO | NEÓN | RETRO | Modo oscuro              | Última revisión |
+| --------------- | ------------- | ------- | ---- | ----- | ------------------------ | --------------- |
+| `asteroids`     | ASTEROIDS     | ✅      | ✅   | ✅    | OK · peor 4.74 (retro)   | 2026-11-17      |
 | `bloque-buster` | BLOQUE BUSTER | ✅      | ✅   | ✅    | OK · peor 3.91 (clásico) | 2026-11-17      |
-| `caida`         | CAÍDA         | ❌      | ❌   | ❌    | Sin verificar          | —               |
-| `serpentina`    | SERPENTINA    | ✅      | ✅   | ✅    | OK · peor 4.58 (retro) | 2026-11-17      |
+| `caida`         | CAÍDA         | ✅      | ✅   | ✅    | OK · peor 3.79 (clásico) | 2026-11-17      |
+| `serpentina`    | SERPENTINA    | ✅      | ✅   | ✅    | OK · peor 4.58 (retro)   | 2026-11-17      |
 
 ## Notas (2026-11-16)
 
@@ -41,3 +41,11 @@ Leyenda: ✅ implementada y verificada · ⚠️ implementada con fallos de cont
 - Reutiliza el contrato de `asteroids` sin cambios: `BloqueBusterPalette` + `SKINS` en `lib/games/bloque-buster/constants.ts` (añade `blockFill`, opacidad del interior de los bloques: 1 = macizo en RETRO), `setSkin` en el motor y `skins` en el registro.
 - Peor ratio por skin: CLÁSICO 3.91 (bloque violeta `#aa00ff`, paleta original sin cambios) · NEÓN 5.50 (bloque `#c64bff` vs `--bg`) · RETRO 4.74 (bloque lavanda `#83769c` vs `--bg`).
 - Los 7 colores de bloque se distinguen por tono; algunos pares tienen luminancia casi igual (p. ej. cian/verde en CLÁSICO y NEÓN, verde/gris en RETRO).
+
+## Notas (2026-11-17) — CAÍDA
+
+- Reutiliza el contrato de `asteroids` sin cambios: `CaidaPalette` + `SKINS` en `lib/games/caida/constants.ts`, `setSkin` en el motor y `skins` en el registro (conserva `hasLives: false`).
+- Peor ratio por skin (vs pozo de la skin y vs `--bg`): CLÁSICO 3.79 (T violeta `#aa00ff`, paleta original sin cambios) · NEÓN 5.50 (T `#c64bff` vs `--bg`) · RETRO 4.74 (J lavanda `#83769c` vs `--bg`). Textos en canvas ≥ 5.04.
+- Las 8 piezas (I, O, T, S, Z, J, L y la tuerca N) no se pueden separar solo por color en todos los tipos de daltonismo (ΔE mínimo óptimo ~17–23). NEÓN y RETRO añaden una **marca interior** por pieza (`marks`: lisa I/O/T/L · punto S/Z · marco J/N, estilo bloques de NES) para que los pares conflictivos (T/J/Z, I/N, O/S, S/L) queden en grupos distintos. CLÁSICO conserva bloques lisos (en deuteranopia T/J se parecen; se distinguen por forma).
+- Pieza fantasma: opacidad por skin (`ghostAlpha`: 0.2 / 0.25 / 0.35), guía decorativa; siempre ≥ 3.3:1 frente a la pieza sólida del mismo color, para que no se confunda con bloques fijados.
+- RETRO: bloques planos (`highlightAlpha: 0`), sin glow, pozo negro con rejilla azul PICO-8.
